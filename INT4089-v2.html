@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coin Counter</title>
+<style>
+  :root {
+    --bg: #fdf8ef;
+    --ink: #1f2a37;
+    --muted: #5b6573;
+    --card: #ffffff;
+    --line: #e6dccb;
+    --accent: #2f6fde;
+    --accent-ink: #ffffff;
+    --good: #1d8a4e;
+    --good-bg: #e3f6ea;
+    --warn: #b45309;
+    --warn-bg: #fff1dc;
+    --bad: #c0392b;
+    --bad-bg: #fde7e4;
+    --radius: 22px;
+    --shadow: 0 4px 0 rgba(31,42,55,.08), 0 10px 24px rgba(31,42,55,.06);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: clamp(18px, 1.6vw, 26px);
+    line-height: 1.3;
+    min-height: 100vh;
+  }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 4px solid #f5b301; outline-offset: 3px; }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 18px clamp(16px, 3vw, 40px);
+    background: var(--card); border-bottom: 3px solid var(--line);
+  }
+  h1 { margin: 0; font-size: clamp(30px, 3.2vw, 52px); letter-spacing: -0.5px; }
+  h1 span { color: var(--accent); }
+  .tabs { display: flex; gap: 10px; background: #f1ebe0; padding: 6px; border-radius: 999px; }
+  .tab {
+    border: 0; background: transparent; color: var(--ink);
+    padding: 12px 28px; border-radius: 999px; font-weight: 700; font-size: 1.05em;
+  }
+  .tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .serial { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    border: 0; border-radius: 16px; padding: 14px 24px; font-weight: 700;
+    background: var(--accent); color: var(--accent-ink); box-shadow: 0 4px 0 #1d4fa8;
+    transition: transform .06s ease, box-shadow .06s ease;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #1d4fa8; }
+  .btn.secondary { background: #e9e1d2; color: var(--ink); box-shadow: 0 4px 0 #cbbfa9; }
+  .btn.secondary:active { box-shadow: 0 1px 0 #cbbfa9; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .status-dot { width: 18px; height: 18px; border-radius: 50%; background: #b8b0a2; flex: none; }
+  .status-dot.on { background: var(--good); box-shadow: 0 0 0 5px rgba(29,138,78,.2); }
+  .status-text { font-size: .8em; color: var(--muted); max-width: 22em; }
+  select.baud { font: inherit; font-size: .8em; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
+
+  /* ---------- Layout ---------- */
+  main {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: clamp(16px, 2.5vw, 36px); padding: clamp(16px, 3vw, 40px);
+    max-width: 1700px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: clamp(18px, 2vw, 32px); }
+  .panel h2 { margin: 0 0 16px; font-size: 1.35em; }
+
+  /* ---------- Coins ---------- */
+  .coin-list { display: grid; gap: 18px; }
+  .coin-row {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 20px;
+    padding: 14px 18px; border: 3px solid var(--line); border-radius: 20px;
+  }
+  .coin-row .name { font-weight: 800; font-size: 1.5em; }
+  .insert {
+    border: 0; border-radius: 18px; padding: 18px 30px; font-weight: 800; font-size: 1.15em;
+    background: var(--good); color: #fff; box-shadow: 0 5px 0 #126337; min-width: 6.5em;
+    transition: transform .06s ease, box-shadow .06s ease;
+  }
+  .insert:active { transform: translateY(4px); box-shadow: 0 1px 0 #126337; }
+
+  .coin {
+    --size: clamp(70px, 7vw, 110px);
+    width: var(--size); height: var(--size); border-radius: 50%;
+    display: grid; place-items: center; position: relative; flex: none;
+    font-weight: 900; font-size: calc(var(--size) * .3); color: rgba(0,0,0,.55);
+    box-shadow: inset 0 0 0 calc(var(--size) * .05) rgba(0,0,0,.12), 0 3px 6px rgba(0,0,0,.2);
+    user-select: none;
+  }
+  .coin.small { --size: clamp(44px, 4vw, 64px); }
+  .coin.c1  { background: radial-gradient(circle at 35% 30%, #ffffff, #d7dade 45%, #a9aeb5 100%); }
+  .coin.c10 { background: radial-gradient(circle at 35% 30%, #f6c79b, #c9783f 50%, #8e4a1f 100%); color: rgba(60,20,0,.7); }
+  .coin.c5  {
+    background:
+      radial-gradient(circle at center, var(--hole, var(--card)) 0 15%, rgba(0,0,0,.25) 15.5% 18%, transparent 18.5%),
+      radial-gradient(circle at 35% 30%, #fff3b0, #e1b93f 50%, #a57c12 100%);
+    color: rgba(80,55,0,.75);
+  }
+  .coin.c5 span { position: absolute; bottom: 9%; font-size: .75em; }
+  .tray .coin.c5 { --hole: #f6efe2; }
+
+  .drop { animation: drop .35s cubic-bezier(.3,1.4,.6,1); }
+  @keyframes drop { from { transform: translateY(-40px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .bump { animation: bump .3s ease; }
+  @keyframes bump { 50% { transform: scale(1.15); } }
+
+  .hint { color: var(--muted); font-size: .8em; margin: 16px 0 0; }
+  kbd { background: #f1ebe0; border: 2px solid var(--line); border-radius: 8px; padding: 1px 8px; font-family: inherit; font-weight: 700; }
+
+  /* ---------- Demo mode ---------- */
+  table.counts { width: 100%; border-collapse: collapse; font-size: 1.15em; }
+  .counts th, .counts td { padding: 12px 10px; text-align: left; border-bottom: 3px solid #f1ebe0; }
+  .counts th { color: var(--muted); font-size: .75em; text-transform: uppercase; letter-spacing: 1px; }
+  .counts td.num { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+  .counts td .coin { --size: 52px; }
+  .counts .cell-coin { display: flex; align-items: center; gap: 14px; font-weight: 700; }
+
+  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+  .stat { background: #f6efe2; border-radius: 18px; padding: 18px 22px; }
+  .stat .label { color: var(--muted); font-weight: 700; font-size: .85em; }
+  .stat .value { font-size: clamp(44px, 4.6vw, 80px); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1.05; }
+  .stat.money { background: #e6efff; }
+  .stat.money .value { color: var(--accent); }
+
+  .tray {
+    display: flex; flex-wrap: wrap; gap: 8px; min-height: 84px; align-items: center;
+    background: #f6efe2; border: 3px dashed var(--line); border-radius: 18px; padding: 12px; margin-top: 22px;
+  }
+  .tray:empty::before { content: "Coins you insert will appear here."; color: var(--muted); font-size: .85em; padding-left: 8px; }
+
+  .row-actions { display: flex; gap: 14px; margin-top: 22px; flex-wrap: wrap; }
+
+  /* ---------- Challenge mode ---------- */
+  .question { font-size: clamp(38px, 4.2vw, 72px); font-weight: 900; margin: 0 0 18px; line-height: 1.1; }
+  .question em { font-style: normal; color: var(--accent); }
+  .progress-wrap { position: relative; height: 46px; background: #f1ebe0; border-radius: 999px; overflow: hidden; margin: 10px 0 8px; }
+  .progress-bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 999px; transition: width .3s ease, background .3s; }
+  .progress-bar.over { background: var(--bad); }
+  .progress-bar.done { background: var(--good); }
+  .progress-label { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; text-shadow: 0 0 3px #fff, 0 0 6px #fff, 0 0 10px #fff; }
+  .feedback {
+    margin-top: 18px; padding: 20px 24px; border-radius: 20px; font-size: clamp(26px, 2.6vw, 44px); font-weight: 800;
+    background: #f6efe2; text-align: center;
+  }
+  .feedback.need { background: var(--warn-bg); color: var(--warn); }
+  .feedback.over { background: var(--bad-bg); color: var(--bad); }
+  .feedback.win  { background: var(--good-bg); color: var(--good); font-size: clamp(40px, 4.6vw, 80px); }
+  .feedback .sub { display: block; font-size: .55em; font-weight: 700; margin-top: 6px; opacity: .9; }
+  .mini-counts { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 18px; font-weight: 700; color: var(--muted); }
+  .mini-counts b { color: var(--ink); font-size: 1.2em; }
+
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+  .confetti i { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 3px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ---------- Serial log ---------- */
+  details.log { margin: 0 clamp(16px, 3vw, 40px) 30px; max-width: 1700px; }
+  @media (min-width: 1780px) { details.log { margin-left: auto; margin-right: auto; } }
+  details.log summary { cursor: pointer; font-weight: 700; color: var(--muted); font-size: .85em; padding: 8px 0; }
+  .log-box {
+    background: #1f2a37; color: #d6f5dd; font-family: ui-monospace, Consolas, monospace; font-size: 15px;
+    border-radius: 14px; padding: 14px; height: 180px; overflow: auto; white-space: pre-wrap;
+  }
+  .log-box .err { color: #ffb4a8; }
+  .log-box .ok { color: #8ef0a8; }
+  .sim { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; font-size: .8em; }
+  .sim input { flex: 1; min-width: 240px; font: inherit; font-family: ui-monospace, Consolas, monospace; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line); }
+
+  /* ---------- Coin source switch + real-coin panel ---------- */
+  .switch-group { display: flex; align-items: center; gap: 12px; }
+  .switch-label { font-weight: 700; color: var(--muted); font-size: .8em; text-transform: uppercase; letter-spacing: 1px; }
+  .tabs.source .tab[aria-checked="true"] { background: var(--good); color: #fff; }
+  .tabs .tab { padding: 12px 22px; }
+
+  .conn-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; padding: 14px 18px; background: #f6efe2; border-radius: 18px; }
+  .conn-text { font-weight: 700; flex: 1; min-width: 10em; }
+  .scale-box {
+    margin-top: 22px; border: 3px dashed var(--line); border-radius: 24px;
+    padding: 30px 20px; display: grid; justify-items: center; gap: 18px; text-align: center;
+  }
+  .scale-slot {
+    width: clamp(150px, 14vw, 220px); height: clamp(150px, 14vw, 220px); border-radius: 50%;
+    display: grid; place-items: center; background: #f1ebe0;
+  }
+  .scale-slot .coin { --size: clamp(140px, 13vw, 210px); }
+  .scale-wait { font-size: clamp(70px, 7vw, 110px); font-weight: 900; color: #cbbfa9; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .scale-msg { font-size: clamp(28px, 2.8vw, 46px); font-weight: 800; }
+  .scale-msg.got { color: var(--good); }
+  .scale-msg.err { color: var(--bad); font-size: clamp(20px, 1.8vw, 30px); }
+
+  .hidden { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Coin <span>Counter</span></h1>
+
+  <div class="switch-group">
+    <span class="switch-label">Coins</span>
+    <div class="tabs source" role="radiogroup" aria-label="Where coins come from">
+      <button class="tab" role="radio" id="src-virtual" aria-checked="true">🖱️ Virtual</button>
+      <button class="tab" role="radio" id="src-real" aria-checked="false">⚖️ Real (Arduino)</button>
+    </div>
+  </div>
+
+  <div class="switch-group">
+    <span class="switch-label">Activity</span>
+    <div class="tabs" role="tablist" aria-label="Activity">
+      <button class="tab" role="tab" id="tab-demo" aria-selected="true" aria-controls="view-demo">Count Coins</button>
+      <button class="tab" role="tab" id="tab-challenge" aria-selected="false" aria-controls="view-challenge">Maths Challenge</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- VIRTUAL COINS: on-screen buttons -->
+  <section class="panel" id="virtualPanel" aria-labelledby="coins-h">
+    <h2 id="coins-h">Insert a coin</h2>
+    <div class="coin-list" id="coinList"></div>
+    <p class="hint">Keyboard: <kbd>1</kbd> = ¥1, <kbd>5</kbd> = ¥5, <kbd>0</kbd> = ¥10</p>
+  </section>
+
+  <!-- REAL COINS: Arduino scale -->
+  <section class="panel hidden" id="realPanel" aria-labelledby="real-h">
+    <h2 id="real-h">Place a coin on the scale</h2>
+    <div class="conn-row">
+      <span class="status-dot" id="serialDot" aria-hidden="true"></span>
+      <span class="conn-text" id="serialStatus">Arduino not connected</span>
+      <select class="baud" id="baud" aria-label="Baud rate">
+        <option value="9600" selected>9600 baud</option>
+        <option value="57600">57600 baud</option>
+        <option value="115200">115200 baud</option>
+      </select>
+      <button class="btn" id="connectBtn">Connect Arduino</button>
+    </div>
+    <div class="scale-box" id="scaleBox" aria-live="polite">
+      <div class="scale-slot" id="scaleSlot"><span class="scale-wait">?</span></div>
+      <div class="scale-msg" id="scaleMsg">Waiting for a coin…</div>
+    </div>
+    <p class="hint">Put one coin on the scale at a time. Take it off before adding the next one.</p>
+  </section>
+
+  <!-- Demo mode -->
+  <section class="panel" id="view-demo" role="tabpanel" aria-labelledby="tab-demo">
+    <h2>Coins inserted</h2>
+    <table class="counts">
+      <thead><tr><th>Coin</th><th style="text-align:right">How many</th><th style="text-align:right">Value</th></tr></thead>
+      <tbody id="countBody"></tbody>
+    </table>
+    <div class="totals">
+      <div class="stat"><div class="label">Total coins</div><div class="value" id="totalCoins">0</div></div>
+      <div class="stat money"><div class="label">Total value</div><div class="value" id="totalValue">¥0</div></div>
+    </div>
+    <div class="tray" id="demoTray" aria-label="Inserted coins"></div>
+    <div class="row-actions">
+      <button class="btn secondary" id="demoReset">Clear</button>
+    </div>
+  </section>
+
+  <!-- Maths challenge -->
+  <section class="panel hidden" id="view-challenge" role="tabpanel" aria-labelledby="tab-challenge">
+    <p class="question">Can you make <em id="targetText">¥14</em>?</p>
+    <div class="progress-wrap" aria-hidden="true">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-label" id="progressLabel">¥0 of ¥14</div>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite">Insert coins to begin!</div>
+    <div class="tray" id="challengeTray" aria-label="Inserted coins"></div>
+    <div class="mini-counts" id="miniCounts"></div>
+    <div class="row-actions">
+      <button class="btn" id="newQuestion">New Question</button>
+      <button class="btn secondary" id="startAgain">Start Again</button>
+    </div>
+  </section>
+</main>
+
+<details class="log">
+  <summary>Arduino messages (for the teacher)</summary>
+  <div class="log-box" id="logBox" aria-live="off"></div>
+  <form class="sim" id="simForm">
+    <input id="simInput" value='{"type":"coin","value":5}' aria-label="Test a serial line" spellcheck="false">
+    <button class="btn secondary" type="submit">Test this line</button>
+  </form>
+</details>
+
+<div class="sr-only" id="announcer" aria-live="assertive"></div>
+
+<script>
+/* =====================================================================
+   SETTINGS — change these to suit your class or hardware
+   ===================================================================== */
+const COINS = [1, 5, 10];        // coin values shown on the page (in yen)
+const TARGET_MIN = 2;            // smallest random question, e.g. "Can you make ¥2?"
+const TARGET_MAX = 30;           // largest random question, e.g. "Can you make ¥30?"
+let challengeTarget = 14;        // replaced by a random amount when the page starts
+
+function newTarget() {
+  let t;
+  do { t = TARGET_MIN + Math.floor(Math.random() * (TARGET_MAX - TARGET_MIN + 1)); }
+  while (t === challengeTarget && TARGET_MAX > TARGET_MIN); // never repeat the same question twice
+  return t;
+}
+
+/* =====================================================================
+   ARDUINO PARSER — edit this one function when you know the real output.
+   It receives ONE line of text from the Uno (without the newline).
+   Return the coin value (1, 5 or 10) if the line is a recognised coin,
+   or null to ignore the line (e.g. calibration or debug messages).
+   ===================================================================== */
+function parseArduinoLine(line) {
+  const text = line.trim();
+  if (!text) return null;
+
+  // Expected format for now: {"type":"coin","value":5}
+  if (text.startsWith("{")) {
+    try {
+      const msg = JSON.parse(text);
+      if (msg.type === "coin") return Number(msg.value);
+    } catch (e) { /* not valid JSON — fall through */ }
+    return null;
+  }
+
+  // Extra convenience: a line that is just a number, e.g. "10"
+  if (/^\d+$/.test(text)) return Number(text);
+
+  return null; // anything else is ignored
+}
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+let mode = "demo";            // "demo" (Count Coins) or "challenge"
+let coinSource = "virtual";   // "virtual" (on-screen buttons) or "real" (Arduino scale)
+const state = {
+  demo:      { counts: {}, order: [] },
+  challenge: { counts: {}, order: [], won: false }
+};
+function resetState(s) { COINS.forEach(c => s.counts[c] = 0); s.order = []; s.won = false; }
+resetState(state.demo); resetState(state.challenge);
+
+const $ = id => document.getElementById(id);
+const yen = n => "¥" + n;
+const total = s => s.order.reduce((a, b) => a + b, 0);
+
+/* =====================================================================
+   THE ONE ENTRY POINT — buttons, keyboard and Arduino all call this
+   ===================================================================== */
+function insertCoin(value, source = "button") {
+  value = Number(value);
+  if (!COINS.includes(value)) {
+    log(`Ignored: ¥${value} is not a known coin`, "err");
+    if (source === "arduino" && coinSource === "real") showScaleError(`Coin not recognised. Try again.`);
+    return false;
+  }
+  // Virtual mode only takes clicks/keys; Real mode only takes coins from the Arduino.
+  const expected = coinSource === "real" ? "arduino" : "virtual";
+  const actual = source === "arduino" ? "arduino" : "virtual";
+  if (expected !== actual) {
+    if (source === "arduino") log(`Ignored ¥${value}: switch Coins to "Real (Arduino)" to use the scale.`, "err");
+    return false;
+  }
+  if (source === "arduino") showDetected(value);
+  const s = state[mode];
+  s.counts[value]++;
+  s.order.push(value);
+  if (source === "arduino") log(`Coin ¥${value} → ${mode === "demo" ? "Count Coins" : "Maths Challenge"}`, "ok");
+  render(value);
+  return true;
+}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function coinEl(value, small) {
+  const d = document.createElement("div");
+  d.className = `coin c${value}` + (small ? " small" : "");
+  d.setAttribute("aria-hidden", "true");
+  d.innerHTML = value === 5 ? "<span>5</span>" : String(value);
+  return d;
+}
+
+function buildCoinButtons() {
+  const list = $("coinList");
+  COINS.forEach(v => {
+    const row = document.createElement("div");
+    row.className = "coin-row";
+    row.appendChild(coinEl(v));
+    const name = document.createElement("div");
+    name.className = "name"; name.textContent = yen(v);
+    row.appendChild(name);
+    const b = document.createElement("button");
+    b.className = "insert"; b.textContent = "Insert";
+    b.setAttribute("aria-label", `Insert ${v} yen coin`);
+    b.addEventListener("click", () => insertCoin(v, "button"));
+    row.appendChild(b);
+    list.appendChild(row);
+  });
+
+  const body = $("countBody");
+  COINS.forEach(v => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><div class="cell-coin"></div></td><td class="num" id="count-${v}">0</td><td class="num" id="sub-${v}">¥0</td>`;
+    tr.querySelector(".cell-coin").append(coinEl(v), document.createTextNode(yen(v) + " coins"));
+    body.appendChild(tr);
+  });
+}
+
+function fillTray(trayId, s, newest) {
+  const tray = $(trayId);
+  tray.innerHTML = "";
+  s.order.forEach((v, i) => {
+    const c = coinEl(v, true);
+    if (newest && i === s.order.length - 1) c.classList.add("drop");
+    tray.appendChild(c);
+  });
+}
+
+function bump(el) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+
+function renderDemo(newest) {
+  const s = state.demo;
+  COINS.forEach(v => {
+    $("count-" + v).textContent = s.counts[v];
+    $("sub-" + v).textContent = yen(s.counts[v] * v);
+  });
+  $("totalCoins").textContent = s.order.length;
+  $("totalValue").textContent = yen(total(s));
+  fillTray("demoTray", s, newest);
+  if (newest) { bump($("totalValue")); bump($("count-" + newest)); }
+}
+
+function renderChallenge(newest) {
+  const s = state.challenge;
+  const t = total(s), target = challengeTarget;
+  $("targetText").textContent = yen(target);
+  const bar = $("progressBar"), fb = $("feedback");
+  bar.style.width = Math.min(100, (t / target) * 100) + "%";
+  bar.classList.toggle("over", t > target);
+  bar.classList.toggle("done", t === target);
+  $("progressLabel").textContent = `${yen(t)} of ${yen(target)}`;
+
+  const wasWon = s.won;
+  fb.className = "feedback";
+  if (s.order.length === 0) {
+    fb.textContent = coinSource === "real" ? "Place a coin on the scale to begin!" : "Insert coins to begin!";
+  } else if (t < target) {
+    fb.classList.add("need");
+    fb.innerHTML = `You need ${yen(target - t)} more.<span class="sub">You have ${yen(t)} so far.</span>`;
+  } else if (t > target) {
+    fb.classList.add("over");
+    fb.innerHTML = `Oops! You are ${yen(t - target)} over.<span class="sub">You have ${yen(t)}. Press Start Again and try another way.</span>`;
+  } else {
+    fb.classList.add("win");
+    fb.innerHTML = `You got it! 🎉<span class="sub">${describe(s)} = ${yen(target)}<br>Press New Question to try another.</span>`;
+  }
+  s.won = (t === target);
+  if (s.won && !wasWon && newest) celebrate();
+
+  fillTray("challengeTray", s, newest);
+  $("miniCounts").innerHTML = COINS.map(v => `<span>${yen(v)} × <b>${s.counts[v]}</b></span>`).join("")
+    + `<span>Coins: <b>${s.order.length}</b></span>`;
+}
+
+function describe(s) {
+  return COINS.slice().reverse().filter(v => s.counts[v] > 0)
+    .map(v => `${s.counts[v]} × ${yen(v)}`).join(" + ");
+}
+
+function render(newest) {
+  if (mode === "demo") renderDemo(newest); else renderChallenge(newest);
+  if (newest) {
+    const s = state[mode];
+    $("announcer").textContent = `${yen(newest)} coin inserted. Total ${yen(total(s))}.`;
+  }
+}
+
+function celebrate() {
+  const box = document.createElement("div");
+  box.className = "confetti";
+  const colours = ["#2f6fde", "#1d8a4e", "#f5b301", "#e4572e", "#9b5de5"];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement("i");
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.background = colours[i % colours.length];
+    p.style.animationDuration = (1.6 + Math.random() * 1.6) + "s";
+    p.style.animationDelay = (Math.random() * .4) + "s";
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3800);
+}
+
+/* =====================================================================
+   MODES & BUTTONS
+   ===================================================================== */
+function setMode(m) {
+  mode = m;
+  $("tab-demo").setAttribute("aria-selected", m === "demo");
+  $("tab-challenge").setAttribute("aria-selected", m === "challenge");
+  $("view-demo").classList.toggle("hidden", m !== "demo");
+  $("view-challenge").classList.toggle("hidden", m !== "challenge");
+  render();
+}
+function setSource(src) {
+  coinSource = src;
+  $("src-virtual").setAttribute("aria-checked", src === "virtual");
+  $("src-real").setAttribute("aria-checked", src === "real");
+  $("virtualPanel").classList.toggle("hidden", src !== "virtual");
+  $("realPanel").classList.toggle("hidden", src !== "real");
+  // Start fresh so virtual and real coins are never mixed
+  resetState(state.demo); resetState(state.challenge);
+  resetScale();
+  renderDemo(); renderChallenge();
+}
+$("src-virtual").addEventListener("click", () => setSource("virtual"));
+$("src-real").addEventListener("click", () => setSource("real"));
+
+/* Big "coin on the scale" display in Real mode */
+let scaleTimer = null;
+function showDetected(value) {
+  const slot = $("scaleSlot");
+  slot.innerHTML = "";
+  const c = coinEl(value); c.classList.add("drop");
+  slot.appendChild(c);
+  const msg = $("scaleMsg");
+  msg.className = "scale-msg got";
+  msg.textContent = `${yen(value)} coin!`;
+  clearTimeout(scaleTimer);
+  scaleTimer = setTimeout(resetScale, 2500);
+}
+function showScaleError(text) {
+  const msg = $("scaleMsg");
+  msg.className = "scale-msg err";
+  msg.textContent = text;
+  clearTimeout(scaleTimer);
+  scaleTimer = setTimeout(resetScale, 2500);
+}
+function resetScale() {
+  clearTimeout(scaleTimer);
+  $("scaleSlot").innerHTML = '<span class="scale-wait">?</span>';
+  const msg = $("scaleMsg");
+  msg.className = "scale-msg";
+  msg.textContent = port ? "Waiting for a coin…" : "Connect the Arduino to start.";
+}
+
+$("tab-demo").addEventListener("click", () => setMode("demo"));
+$("tab-challenge").addEventListener("click", () => setMode("challenge"));
+$("demoReset").addEventListener("click", () => { resetState(state.demo); renderDemo(); });
+$("startAgain").addEventListener("click", () => { resetState(state.challenge); renderChallenge(); });
+$("newQuestion").addEventListener("click", () => {
+  challengeTarget = newTarget();
+  resetState(state.challenge);
+  renderChallenge();
+  $("announcer").textContent = `New question: can you make ${yen(challengeTarget)}?`;
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const map = { "1": 1, "5": 5, "0": 10 };
+  if (map[e.key] && COINS.includes(map[e.key])) insertCoin(map[e.key], "keyboard");
+});
+
+/* =====================================================================
+   SERIAL LOG + TEST LINE (works without hardware)
+   ===================================================================== */
+function log(msg, cls) {
+  const box = $("logBox");
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = new Date().toLocaleTimeString() + "  " + msg;
+  box.appendChild(line);
+  while (box.childNodes.length > 200) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+function handleSerialLine(line) {
+  log("← " + line);
+  const value = parseArduinoLine(line);
+  if (value !== null && !Number.isNaN(value)) insertCoin(value, "arduino");
+}
+$("simForm").addEventListener("submit", e => { e.preventDefault(); handleSerialLine($("simInput").value); });
+
+/* =====================================================================
+   WEB SERIAL (Chrome / Edge on desktop computers)
+   ===================================================================== */
+let port = null, reader = null, readLoopDone = null, keepReading = false;
+
+function setSerialStatus(text, on) {
+  $("serialStatus").textContent = text;
+  $("serialDot").classList.toggle("on", !!on);
+  $("connectBtn").textContent = on ? "Disconnect" : "Connect Arduino";
+  $("connectBtn").classList.toggle("secondary", !!on);
+  $("baud").classList.toggle("hidden", !!on);
+  resetScale();
+}
+
+if (!("serial" in navigator)) {
+  $("connectBtn").disabled = true;
+  $("serialStatus").textContent = "Real coins need Chrome or Edge on a computer. Virtual coins work here.";
+  log("Web Serial is not available in this browser.", "err");
+} else {
+  $("connectBtn").addEventListener("click", () => port ? disconnect() : connect());
+  navigator.serial.addEventListener("disconnect", e => {
+    if (e.target === port) { log("Arduino unplugged.", "err"); cleanup(); }
+  });
+}
+
+async function connect() {
+  try {
+    port = await navigator.serial.requestPort();
+    const baudRate = Number($("baud").value);
+    await port.open({ baudRate });
+    setSerialStatus(`Arduino connected`, true);
+    log(`Connected at ${baudRate} baud.`, "ok");
+    keepReading = true;
+    readLoopDone = readLoop();
+  } catch (err) {
+    if (err.name !== "NotFoundError") log("Could not connect: " + err.message, "err");
+    port = null;
+    setSerialStatus(err.name === "NotFoundError" ? "Arduino not connected" : "Could not connect. Check the cable and try again.", false);
+  }
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (port && port.readable && keepReading) {
+    reader = port.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buffer.search(/\r?\n/)) >= 0) {
+          const line = buffer.slice(0, idx);
+          buffer = buffer.slice(buffer[idx] === "\r" ? idx + 2 : idx + 1);
+          handleSerialLine(line);
+        }
+        if (buffer.length > 1000) buffer = ""; // safety: no newline for too long
+      }
+    } catch (err) {
+      if (keepReading) log("Read error: " + err.message, "err");
+    } finally {
+      reader.releaseLock();
+      reader = null;
+    }
+  }
+}
+
+async function disconnect() {
+  keepReading = false;
+  try { if (reader) await reader.cancel(); } catch (e) {}
+  try { await readLoopDone; } catch (e) {}
+  try { await port.close(); } catch (e) {}
+  log("Disconnected.");
+  cleanup();
+}
+function cleanup() { port = null; reader = null; keepReading = false; setSerialStatus("Arduino not connected", false); }
+
+/* =====================================================================
+   START
+   ===================================================================== */
+buildCoinButtons();
+challengeTarget = newTarget();
+renderDemo();
+renderChallenge();
+resetScale();
+log("Ready. Virtual coins work without an Arduino. Choose Real (Arduino) to use the scale.");
+log('Tip: in Real mode you can type a line below and press "Test this line" to pretend the Arduino sent it.');
+</script>
+</body>
+</html>

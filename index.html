@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CoinWise — Smart Coin Bank</title>
+<style>
+  :root {
+    --bg: #f7f8fb;
+    --ink: #161d2b;
+    --muted: #667085;
+    --card: #ffffff;
+    --line: #e7eaf0;
+    --accent: #2563eb;
+    --accent-ink: #ffffff;
+    --good: #178a52;
+    --good-bg: #ecf7f1;
+    --warn: #b45309;
+    --warn-bg: #fdf5e9;
+    --bad: #c0392b;
+    --bad-bg: #fdf0ee;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(22,29,43,.04), 0 10px 30px rgba(22,29,43,.06);
+    --font-sans: ui-sans-serif, -apple-system, "Segoe UI", "Helvetica Neue", "PingFang HK", "Microsoft JhengHei", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: clamp(15.5px, 1.35vw, 21px);
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  button { font: inherit; cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid rgba(37,99,235,.45); outline-offset: 2px; }
+  .hidden { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px 22px; padding: 12px clamp(20px, 3vw, 44px);
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-logo { width: 38px; height: 38px; flex: none; }
+  .brand-logo .coin { --size: 38px; }
+  .brand h1 { margin: 0; font-size: clamp(20px, 1.8vw, 26px); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+  .brand h1 span { color: var(--accent); }
+  .brand .tagline { margin: 2px 0 0; color: var(--muted); font-size: .6em; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; }
+
+  .tabs { display: flex; gap: 2px; background: #eef1f6; padding: 4px; border-radius: 12px; }
+  .tab {
+    border: 0; background: transparent; color: var(--muted);
+    padding: 9px 18px; border-radius: 9px; font-weight: 600; font-size: .88em;
+    transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  }
+  .tab[aria-selected="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(22,29,43,.12); }
+  .tabs.source .tab { padding: 9px 14px; }
+  .tabs.source .tab[aria-checked="true"] { background: #fff; color: var(--good); box-shadow: 0 1px 3px rgba(22,29,43,.12); }
+
+  .head-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .switch-label { font-weight: 600; color: var(--muted); font-size: .66em; text-transform: uppercase; letter-spacing: .1em; }
+  .switch-group { display: flex; align-items: center; gap: 10px; }
+
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; border: 1px solid var(--line);
+    padding: 7px 14px; border-radius: 999px; font-weight: 600; font-size: .76em; color: var(--muted);
+  }
+  .status-pill .dot { width: 9px; height: 9px; border-radius: 50%; background: #c3c9d4; flex: none; }
+  .status-pill.st-ready { background: var(--good-bg); border-color: #cde9da; color: var(--good); }
+  .status-pill.st-ready .dot { background: var(--good); }
+  .status-pill.st-busy { background: var(--warn-bg); border-color: #f2dfc0; color: var(--warn); }
+  .status-pill.st-busy .dot { background: #e09b2d; }
+  .status-pill.st-error { background: var(--bad-bg); border-color: #f2cfc9; color: var(--bad); }
+  .status-pill.st-error .dot { background: var(--bad); }
+
+  /* ---------- Layout ---------- */
+  main {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: clamp(16px, 2.5vw, 34px); padding: clamp(16px, 3vw, 40px);
+    max-width: 1700px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: clamp(18px, 2vw, 30px); }
+  .panel h2 { margin: 0 0 18px; font-size: 1.12em; font-weight: 700; letter-spacing: -.01em; }
+  .hint { color: var(--muted); font-size: .8em; margin: 16px 0 0; }
+  kbd {
+    background: #eef1f6; border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px;
+    font-family: var(--font-mono); font-size: .9em; font-weight: 600;
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    border: 0; border-radius: 12px; padding: 11px 22px; font-weight: 600;
+    background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 1px 2px rgba(22,29,43,.1);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(37,99,235,.28); }
+  .btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(22,29,43,.1); }
+  .btn.secondary { background: #fff; border: 1px solid var(--line); color: var(--ink); box-shadow: none; }
+  .btn.secondary:hover { border-color: #c6cfdd; box-shadow: 0 3px 10px rgba(22,29,43,.08); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .insert {
+    border: 0; border-radius: 12px; padding: 12px 26px; font-weight: 700; font-size: 1em;
+    background: var(--good); color: #fff; min-width: 6em;
+    box-shadow: 0 1px 2px rgba(22,29,43,.1);
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .insert:hover { background: #11703f; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(23,138,82,.3); }
+  .insert:active { transform: translateY(0); }
+
+  /* ---------- Coins ---------- */
+  .coin-list { display: grid; gap: 12px; }
+  .coin-row {
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: #fbfcfe;
+  }
+  .coin-row .name { font-weight: 650; font-size: 1.15em; line-height: 1.2; }
+  .coin-row .name small { display: block; color: var(--muted); font-weight: 500; font-size: .58em; font-family: var(--font-mono); letter-spacing: .04em; }
+
+  .coin { --size: clamp(60px, 6vw, 88px); width: var(--size); height: var(--size); flex: none; user-select: none; }
+  .coin.small { --size: clamp(36px, 3.2vw, 48px); }
+  .coin svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(22,29,43,.22)); }
+  .coin .coin-num { font-size: 33px; font-weight: 800; fill: rgba(38,45,60,.8); font-family: inherit; }
+  .coin .coin-cur { font-size: 11px; font-weight: 700; fill: rgba(38,45,60,.48); font-family: inherit; }
+  .coin.small .coin-num { font-size: 19px; }
+
+  .drop { animation: drop .35s cubic-bezier(.3,1.4,.6,1); }
+  @keyframes drop { from { transform: translateY(-40px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .bump { animation: bump .3s ease; }
+  @keyframes bump { 50% { transform: scale(1.14); } }
+
+  /* ---------- Real (Arduino) panel ---------- */
+  .conn-row { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 16px; background: #fafbfd; border: 1px solid var(--line); border-radius: 12px; }
+  .conn-text { font-weight: 600; flex: 1; min-width: 9em; font-size: .9em; }
+  select.baud { font: inherit; font-size: .78em; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+
+  .machine-card { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; padding: 18px; background: #fafbfd; }
+  .machine-state {
+    font-family: var(--font-mono); font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    text-align: center; padding: 10px; border-radius: 10px; font-size: clamp(14px, 1.4vw, 19px); color: var(--muted); background: #eef1f6;
+  }
+  .machine-state.st-ready { color: var(--good); background: var(--good-bg); }
+  .machine-state.st-busy { color: var(--warn); background: var(--warn-bg); }
+  .machine-state.st-error { color: var(--bad); background: var(--bad-bg); }
+
+  .scale-box { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px 22px; margin-top: 16px; }
+  .scale-slot {
+    width: clamp(120px, 11vw, 168px); height: clamp(120px, 11vw, 168px); border-radius: 50%;
+    display: grid; place-items: center; background: #eef1f6; border: 2px dashed #d5dbe6; grid-row: span 2;
+  }
+  .scale-slot .coin { --size: clamp(105px, 10vw, 152px); }
+  .scale-wait { font-size: clamp(48px, 5vw, 80px); font-weight: 700; color: #c9cfda; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .weight-value { font-family: var(--font-mono); font-size: clamp(40px, 4vw, 62px); font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .weight-unit { color: var(--muted); font-weight: 600; font-size: .66em; text-transform: uppercase; letter-spacing: .1em; margin-top: 2px; }
+  .spark-wrap { position: relative; }
+  .spark-wrap svg { width: 100%; height: 48px; display: block; }
+  .spark-line { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .spark-empty { color: var(--muted); font-size: .72em; }
+
+  .weight-axis { position: relative; height: 56px; margin: 24px 4px 0; }
+  .weight-axis .axis-line { position: absolute; left: 0; right: 0; top: 24px; height: 2px; background: #e3e7ee; border-radius: 2px; }
+  .weight-axis .band { position: absolute; top: 15px; height: 20px; border-radius: 6px; background: rgba(23,138,82,.13); border: 1px solid rgba(23,138,82,.35); }
+  .weight-axis .marker { position: absolute; top: 6px; bottom: 22px; width: 2px; background: var(--ink); border-radius: 2px; transition: left .25s ease; }
+  .weight-axis .marker span {
+    position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: .68em; font-weight: 600; white-space: nowrap;
+    background: var(--ink); color: #fff; padding: 2px 8px; border-radius: 6px;
+  }
+  .axis-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(23,138,82,.35); background: rgba(23,138,82,.07); color: var(--good);
+    border-radius: 999px; padding: 4px 12px; font-size: .75em; font-weight: 700;
+  }
+  .legend-chip .legend-range { font-family: var(--font-mono); font-weight: 500; color: var(--muted); }
+  .axis-note { color: var(--muted); font-size: .72em; margin-top: 8px; }
+
+  /* ---------- Count Coins ---------- */
+  table.counts { width: 100%; border-collapse: collapse; font-size: .98em; }
+  .counts th, .counts td { padding: 11px 10px; text-align: left; border-bottom: 1px solid #eef1f6; }
+  .counts th { color: var(--muted); font-size: .64em; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+  .counts td.num { font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+  .counts .cell-coin { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+  .counts .cell-coin .coin { --size: 42px; }
+
+  .dist { margin-top: 16px; padding: 14px 16px; background: #fafbfd; border: 1px solid var(--line); border-radius: 12px; }
+  .dist-title { color: var(--muted); font-weight: 600; font-size: .66em; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+  .dist-row { display: flex; align-items: center; gap: 12px; margin: 7px 0; font-weight: 600; font-size: .85em; }
+  .dist-row > span:first-child { width: 2.2em; flex: none; }
+  .dist-row > span:last-child { width: 3.2em; text-align: right; color: var(--muted); font-family: var(--font-mono); font-size: .9em; }
+  .dist-track { flex: 1; height: 9px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
+  .dist-fill { height: 100%; width: 0; border-radius: 999px; transition: width .45s ease; }
+  .dist-fill.c1 { background: #7aa2d8; }
+  .dist-fill.c2 { background: #52b39a; }
+  .dist-fill.c5 { background: #e3b04f; }
+
+  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .stat { background: #fafbfd; border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+  .stat .label { color: var(--muted); font-weight: 600; font-size: .66em; text-transform: uppercase; letter-spacing: .1em; }
+  .stat .value { font-family: var(--font-mono); font-size: clamp(34px, 3.6vw, 56px); font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .stat.money { background: #eef4ff; border-color: #d9e5fb; }
+  .stat.money .value { color: var(--accent); }
+
+  .tray {
+    display: flex; flex-wrap: wrap; gap: 8px; min-height: 70px; align-items: center;
+    background: #f7f8fb; border: 1px dashed #d5dbe6; border-radius: 12px; padding: 10px; margin-top: 14px;
+  }
+  .tray:empty::before { content: "Coins you insert will appear here."; color: var(--muted); font-size: .78em; padding-left: 8px; }
+  .row-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+
+  .goal-card { margin-top: 16px; padding: 16px 18px; background: #fcf9f2; border: 1px solid #efe6cf; border-radius: 14px; }
+  .goal-card h3 { margin: 0 0 12px; font-size: .98em; font-weight: 700; }
+  .goal-set { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .goal-set input {
+    font: inherit; font-size: .92em; padding: 9px 13px; border-radius: 10px; border: 1px solid var(--line);
+    width: 8em; background: #fff;
+  }
+  .goal-set input:focus { border-color: var(--accent); }
+  .goal-progress { height: 10px; background: #f0ead8; border-radius: 999px; overflow: hidden; margin-top: 14px; }
+  .goal-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #e3b04f, #d99a1f); transition: width .45s ease; }
+  .goal-text { margin-top: 10px; font-size: .86em; }
+  .goal-text .muted-small { color: var(--muted); font-size: .85em; }
+
+  details.history, details.hood { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  details.history summary, details.hood summary { cursor: pointer; font-weight: 600; font-size: .88em; }
+  details.hood { font-size: .84em; }
+  details.hood p { margin: 10px 0 0; color: var(--muted); }
+  details.hood code { background: #eef1f6; border-radius: 5px; padding: 1px 6px; font-family: var(--font-mono); font-size: .9em; color: var(--ink); }
+  .history table { width: 100%; border-collapse: collapse; font-size: .84em; margin-top: 12px; }
+  .history th, .history td { padding: 8px; text-align: left; border-bottom: 1px solid #eef1f6; }
+  .history th { color: var(--muted); font-weight: 600; font-size: .8em; }
+  .history td.num { text-align: right; font-family: var(--font-mono); font-weight: 600; }
+  .hist-empty { color: var(--muted); padding: 12px 8px !important; }
+
+  /* ---------- Maths Challenge ---------- */
+  .question { font-size: clamp(28px, 3.2vw, 52px); font-weight: 750; margin: 0 0 14px; line-height: 1.15; letter-spacing: -.02em; }
+  .question em { font-style: normal; color: var(--accent); }
+  .progress-wrap { position: relative; height: 40px; background: #eef1f6; border-radius: 999px; overflow: hidden; margin: 10px 0 8px; }
+  .progress-bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 999px; transition: width .3s ease, background .3s; }
+  .progress-bar.over { background: var(--bad); }
+  .progress-bar.done { background: var(--good); }
+  .progress-label { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-mono); font-weight: 600; font-size: .8em; text-shadow: 0 0 4px #fff, 0 0 8px #fff; }
+  .feedback {
+    margin-top: 14px; padding: 16px 20px; border-radius: 14px; font-size: clamp(20px, 2.2vw, 34px); font-weight: 700;
+    background: #fafbfd; text-align: center; border: 1px solid var(--line);
+  }
+  .feedback.need { background: var(--warn-bg); color: var(--warn); border-color: #f2dfc0; }
+  .feedback.over { background: var(--bad-bg); color: var(--bad); border-color: #f2cfc9; }
+  .feedback.win { background: var(--good-bg); color: var(--good); font-size: clamp(30px, 3.8vw, 60px); border-color: #cde9da; }
+  .feedback .sub { display: block; font-size: .5em; font-weight: 600; margin-top: 6px; opacity: .9; }
+  .mini-counts { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; font-weight: 600; color: var(--muted); font-size: .85em; }
+  .mini-counts b { color: var(--ink); font-family: var(--font-mono); font-weight: 700; font-size: 1.1em; }
+
+  .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 50; }
+  .confetti i { position: absolute; top: -20px; width: 14px; height: 22px; border-radius: 3px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+  /* ---------- AI Coach ---------- */
+  .coach-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; position: relative; }
+  .coach-head h2 { margin: 0; }
+  .coach-savings { margin-left: auto; font-family: var(--font-mono); font-weight: 600; font-size: .8em; color: var(--accent); background: #eef4ff; border: 1px solid #d9e5fb; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+  .gear-btn { border: 1px solid var(--line); background: #fff; border-radius: 10px; width: 38px; height: 38px; display: grid; place-items: center; color: var(--muted); transition: color .15s ease, border-color .15s ease; }
+  .gear-btn:hover { color: var(--ink); border-color: #c6cfdd; }
+  .popover {
+    position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(320px, 86vw);
+    background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 16px; font-size: .85em;
+  }
+  .popover label { display: block; font-weight: 600; margin: 10px 0 4px; font-size: .9em; }
+  .popover select, .popover input { font: inherit; font-size: .92em; width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  .popover .pop-note { color: var(--muted); font-size: .78em; margin-top: 10px; line-height: 1.45; }
+  .popover .btn { margin-top: 12px; width: 100%; }
+
+  .chat-box {
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px; height: 300px; overflow: auto;
+    display: flex; flex-direction: column; gap: 8px; background: #fafbfd;
+  }
+  .msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; line-height: 1.5; font-size: .9em; }
+  .msg.bot { background: #fff; border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; }
+  .msg.note { align-self: flex-start; color: var(--muted); font-size: .74em; padding: 2px 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .chip {
+    border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 15px;
+    font-weight: 600; font-size: .82em; color: var(--ink); transition: border-color .15s ease, color .15s ease;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chat-input { display: flex; gap: 10px; }
+  .chat-input input { flex: 1; font: inherit; font-size: .88em; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  .chat-input input:focus { border-color: var(--accent); }
+
+  /* ---------- Serial log ---------- */
+  details.log { margin: 0 clamp(16px, 3vw, 40px) 30px; max-width: 1700px; }
+  @media (min-width: 1780px) { details.log { margin-left: auto; margin-right: auto; } }
+  details.log summary { cursor: pointer; font-weight: 600; color: var(--muted); font-size: .8em; padding: 8px 0; }
+  .log-box {
+    background: #171e2e; color: #c9f2d4; font-family: var(--font-mono); font-size: 14px;
+    border-radius: 12px; padding: 14px; height: 180px; overflow: auto; white-space: pre-wrap;
+  }
+  .log-box .err { color: #ffb4a8; }
+  .log-box .ok { color: #8ef0a8; }
+  .sim { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; font-size: .8em; align-items: center; }
+  .sim input { flex: 1; min-width: 240px; font: inherit; font-family: var(--font-mono); padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+  .sim-demos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .sim-demos .btn { font-size: .78em; padding: 8px 14px; border-radius: 10px; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="cg-silver" cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#d8dce2"/>
+      <stop offset="100%" stop-color="#9aa1ab"/>
+    </radialGradient>
+    <radialGradient id="cg-silver-dark" cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#f0f2f5"/>
+      <stop offset="45%" stop-color="#b6bcc5"/>
+      <stop offset="100%" stop-color="#78808c"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<header>
+  <div class="brand">
+    <div class="brand-logo" id="brandLogo" aria-hidden="true"></div>
+    <div>
+      <h1>Coin<span>Wise</span></h1>
+      <div class="tagline">Smart Coin Bank · HK$ coin sorter dashboard</div>
+    </div>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Activity">
+    <button class="tab" role="tab" id="tab-demo" aria-selected="true" aria-controls="view-demo">Count Coins</button>
+    <button class="tab" role="tab" id="tab-challenge" aria-selected="false" aria-controls="view-challenge">Maths Challenge</button>
+    <button class="tab" role="tab" id="tab-coach" aria-selected="false" aria-controls="view-coach">AI Coach</button>
+  </nav>
+
+  <div class="head-right">
+    <div class="switch-group">
+      <span class="switch-label">Coins</span>
+      <div class="tabs source" role="radiogroup" aria-label="Where coins come from">
+        <button class="tab" role="radio" id="src-virtual" aria-checked="true">Virtual</button>
+        <button class="tab" role="radio" id="src-real" aria-checked="false">Real (Arduino)</button>
+      </div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="pill-text">No Arduino</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- VIRTUAL COINS: on-screen buttons -->
+  <section class="panel" id="virtualPanel" aria-labelledby="coins-h">
+    <h2 id="coins-h">Insert a coin</h2>
+    <div class="coin-list" id="coinList"></div>
+    <p class="hint">Keyboard: <kbd>1</kbd> = $1, <kbd>2</kbd> = $2, <kbd>5</kbd> = $5</p>
+  </section>
+
+  <!-- REAL COINS: Arduino scale -->
+  <section class="panel hidden" id="realPanel" aria-labelledby="real-h">
+    <h2 id="real-h">Coin scale</h2>
+    <div class="conn-row">
+      <span class="dot" id="serialDot" aria-hidden="true" style="width:12px;height:12px;border-radius:50%;background:#b3bccd;flex:none"></span>
+      <span class="conn-text" id="serialStatus">Arduino not connected</span>
+      <select class="baud" id="baud" aria-label="Baud rate">
+        <option value="9600" selected>9600 baud</option>
+        <option value="57600">57600 baud</option>
+        <option value="115200">115200 baud</option>
+      </select>
+      <button class="btn" id="connectBtn">Connect Arduino</button>
+    </div>
+    <div class="machine-card">
+      <div class="machine-state" id="machineState" aria-live="polite">Arduino not connected</div>
+      <div class="scale-box">
+        <div class="scale-slot" id="scaleSlot" aria-live="polite"><span class="scale-wait">?</span></div>
+        <div>
+          <div class="weight-value" id="weightValue">—</div>
+          <div class="weight-unit">grams (live reading)</div>
+        </div>
+        <div class="spark-wrap">
+          <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+            <polyline id="sparkLine" class="spark-line" points=""></polyline>
+          </svg>
+          <div class="spark-empty" id="sparkEmpty">Weight history will appear here as the scale sends readings.</div>
+        </div>
+      </div>
+      <div class="weight-axis" id="weightAxis" aria-hidden="true"></div>
+      <div class="axis-legend" id="bandLegend"></div>
+      <div class="axis-note">Recognised weight bands for $1, $2 and $5 — anything outside them is rejected.</div>
+    </div>
+    <p class="hint">Put one coin on the scale at a time. Take it off before adding the next one.</p>
+  </section>
+
+  <!-- Count Coins -->
+  <section class="panel" id="view-demo" role="tabpanel" aria-labelledby="tab-demo">
+    <h2>Coins counted</h2>
+    <table class="counts">
+      <thead><tr><th>Coin</th><th style="text-align:right">How many</th><th style="text-align:right">Value</th></tr></thead>
+      <tbody id="countBody"></tbody>
+    </table>
+
+    <div class="dist">
+      <div class="dist-title">Share of total value</div>
+      <div class="dist-row"><span>$1</span><div class="dist-track"><div class="dist-fill c1" id="share-1"></div></div><span id="share-pct-1">0%</span></div>
+      <div class="dist-row"><span>$2</span><div class="dist-track"><div class="dist-fill c2" id="share-2"></div></div><span id="share-pct-2">0%</span></div>
+      <div class="dist-row"><span>$5</span><div class="dist-track"><div class="dist-fill c5" id="share-5"></div></div><span id="share-pct-5">0%</span></div>
+    </div>
+
+    <div class="totals">
+      <div class="stat"><div class="label">Total coins</div><div class="value" id="totalCoins">0</div></div>
+      <div class="stat money"><div class="label">Total value</div><div class="value" id="totalValue">HK$0</div></div>
+    </div>
+
+    <div class="tray" id="demoTray" aria-label="Inserted coins"></div>
+    <div class="row-actions">
+      <button class="btn secondary" id="demoReset">Clear</button>
+    </div>
+
+    <div class="goal-card">
+      <h3>Savings goal</h3>
+      <div class="goal-set">
+        <input type="number" id="goalInput" min="1" step="1" placeholder="e.g. 120" aria-label="Goal amount in HK dollars">
+        <button class="btn" id="goalSet">Set goal</button>
+        <button class="btn secondary" id="goalClear">Clear</button>
+      </div>
+      <div class="goal-progress hidden" id="goalBody">
+        <div class="goal-fill" id="goalFill"></div>
+      </div>
+      <div class="goal-text" id="goalText"></div>
+    </div>
+
+    <details class="history">
+      <summary>History (saved in this browser)</summary>
+      <table>
+        <thead><tr><th>Date</th><th>Coins</th><th style="text-align:right">Inserts</th><th style="text-align:right">Value</th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+      <div class="row-actions"><button class="btn secondary" id="historyClear">Clear history</button></div>
+    </details>
+  </section>
+
+  <!-- Maths Challenge -->
+  <section class="panel hidden" id="view-challenge" role="tabpanel" aria-labelledby="tab-challenge">
+    <p class="question">Can you make <em id="targetText">HK$14</em>?</p>
+    <div class="progress-wrap" aria-hidden="true">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-label" id="progressLabel">HK$0 of HK$14</div>
+    </div>
+    <div class="feedback" id="feedback" aria-live="polite">Insert coins to begin!</div>
+    <div class="tray" id="challengeTray" aria-label="Inserted coins"></div>
+    <div class="mini-counts" id="miniCounts"></div>
+    <div class="row-actions">
+      <button class="btn" id="newQuestion">New Question</button>
+      <button class="btn secondary" id="startAgain">Start Again</button>
+    </div>
+  </section>
+
+  <!-- AI Coach -->
+  <section class="panel hidden" id="view-coach" role="tabpanel" aria-labelledby="tab-coach">
+    <div class="coach-head">
+      <h2>AI Money Coach</h2>
+      <span class="coach-savings" id="coachSavings">Your savings: HK$0</span>
+      <button class="gear-btn" id="coachSettingsBtn" aria-label="Coach settings">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+      <div class="popover hidden" id="coachPopover">
+        <label for="coachBackend">Answer engine</label>
+        <select id="coachBackend">
+          <option value="offline">Offline (local maths + templates)</option>
+          <option value="poe">AI (DeepSeek via Poe)</option>
+        </select>
+        <label for="coachToken">Poe API key</label>
+        <input type="password" id="coachToken" placeholder="Paste your Poe API key" autocomplete="off">
+        <div class="pop-note">The key is stored only in this browser and is visible to anyone who can open developer tools — use it for demos only.</div>
+        <button class="btn" id="coachSave">Save settings</button>
+      </div>
+    </div>
+    <div class="chat-box" id="chatBox" aria-live="polite"></div>
+    <div class="chips">
+      <button class="chip" data-q="buy">What can I buy with my savings?</button>
+      <button class="chip" data-q="goal">How long until I reach my goal?</button>
+      <button class="chip" data-q="tip">Give me a saving tip</button>
+    </div>
+    <form class="chat-input" id="chatForm">
+      <input id="chatInput" placeholder="Ask the coach anything…" aria-label="Ask the coach" autocomplete="off">
+      <button class="btn" type="submit">Send</button>
+    </form>
+    <details class="hood">
+      <summary>Under the hood (for teachers and students)</summary>
+      <p>Offline mode: the page does the maths itself — your savings, goal and a small price list — and fills in a template answer. AI mode sends a short prompt with the same numbers to DeepSeek (via Poe) and shows its reply. If the AI is unreachable, the offline answer is always available.</p>
+      <p id="hoodState"></p>
+    </details>
+  </section>
+</main>
+
+<details class="log">
+  <summary>Arduino messages (for the teacher)</summary>
+  <div class="log-box" id="logBox" aria-live="off"></div>
+  <form class="sim" id="simForm">
+    <input id="simInput" value='{"type":"coin","value":2}' aria-label="Test a serial line" spellcheck="false">
+    <button class="btn secondary" type="submit">Test this line</button>
+  </form>
+  <div class="sim-demos">
+    <span class="switch-label">Quick demos (work in Real mode):</span>
+    <button class="btn secondary" id="demo1">$1 coin</button>
+    <button class="btn secondary" id="demo2">$2 coin</button>
+    <button class="btn secondary" id="demo5">$5 coin</button>
+    <button class="btn secondary" id="demoUnknown">Unknown coin</button>
+    <button class="btn secondary" id="demoReady">READY</button>
+  </div>
+</details>
+
+<div class="sr-only" id="announcer" aria-live="assertive"></div>
+
+<script>
+/* =====================================================================
+   SETTINGS — change these to suit your class or hardware
+   ===================================================================== */
+const COINS = [1, 2, 5];                 // denominations the sorter recognises
+const COIN_META = {
+  1: { nominal: 7.10,  band: [6.60, 7.60] },    // HK$1 ≈ 7.1 g
+  2: { nominal: 8.41,  band: [7.91, 8.91] },    // HK$2 ≈ 8.4 g (scalloped edge)
+  5: { nominal: 13.50, band: [13.00, 14.00] },  // HK$5 ≈ 13.5 g (thick edge)
+};
+const WEIGHT_MIN = 5, WEIGHT_MAX = 16;  // range shown on the weight axis
+const TARGET_MIN = 2, TARGET_MAX = 30;  // Maths Challenge random question range
+const PRICES = [                        // used by the offline money coach
+  { name: "MTR ride",      price: 8.6 },
+  { name: "bubble tea",    price: 25 },
+  { name: "school lunch",  price: 40 },
+  { name: "cinema ticket", price: 105 },
+  { name: "paperback book", price: 120 },
+  { name: "video game",    price: 400 },
+];
+const HISTORY_DAYS = 30;
+const POE_BOT = "DeepSeek-R1";          // Poe bot name for the AI coach
+const LS = { goal: "cw.goal", history: "cw.history", coach: "cw.coach" };
+
+/* =====================================================================
+   ARDUINO PARSER — edit this one function when the real firmware output
+   is known. It receives ONE line of text from the Uno (without newline).
+   Returns {kind:"coin", value} / {kind:"weight", value} / {kind:"status",
+   value} or null to ignore the line.
+   Accepted formats:
+     {"type":"coin","value":2}
+     {"type":"weight","value":8.41}      (also "grams" or "g")
+     {"type":"status","value":"READY"}   READY / WEIGHING / SORTING / ERROR
+     plain number: 2 → coin, 8.41 → weight (integers in COINS are coins)
+   ===================================================================== */
+function parseArduinoLine(line) {
+  const text = line.trim();
+  if (!text) return null;
+
+  if (text.startsWith("{")) {
+    try {
+      const m = JSON.parse(text);
+      if (m.type === "coin")   return { kind: "coin", value: Number(m.value) };
+      if (m.type === "weight") return { kind: "weight", value: Number(m.value ?? m.grams ?? m.g) };
+      if (m.type === "status") return { kind: "status", value: String(m.value ?? m.state).toUpperCase() };
+      if (m.type === "reject" || m.type === "error") return { kind: "status", value: "ERROR" };
+    } catch (e) { /* not valid JSON — fall through */ }
+    return null;
+  }
+
+  const up = text.toUpperCase();
+  if (["READY", "WEIGHING", "SORTING", "ERROR", "REJECT"].includes(up)) {
+    return { kind: "status", value: up === "REJECT" ? "ERROR" : up };
+  }
+  if (/^-?\d+(\.\d+)?\s*g?$/i.test(text)) {
+    const n = parseFloat(text);
+    if (Number.isInteger(n) && COINS.includes(n)) return { kind: "coin", value: n };
+    return { kind: "weight", value: n };
+  }
+  return null;
+}
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+let mode = "demo";            // "demo" | "challenge" | "coach"
+let coinSource = "virtual";   // "virtual" | "real"
+const state = {
+  demo:      { counts: {}, order: [] },
+  challenge: { counts: {}, order: [], won: false }
+};
+function resetState(s) { COINS.forEach(c => s.counts[c] = 0); s.order = []; s.won = false; }
+resetState(state.demo); resetState(state.challenge);
+
+const machine = { status: "DISCONNECTED", weight: null, weightHistory: [], timer: null };
+
+let challengeTarget = 14;
+function newTarget() {
+  let t;
+  do { t = TARGET_MIN + Math.floor(Math.random() * (TARGET_MAX - TARGET_MIN + 1)); }
+  while (t === challengeTarget && TARGET_MAX > TARGET_MIN);
+  return t;
+}
+
+let goal = Number(localStorage.getItem(LS.goal)) || 0;
+let history = {};
+try { history = JSON.parse(localStorage.getItem(LS.history) || "{}"); } catch (e) {}
+let coach = { backend: "offline", token: "" };
+try { coach = Object.assign(coach, JSON.parse(localStorage.getItem(LS.coach) || "{}")); } catch (e) {}
+let coachLastPrompt = "";
+
+const $ = id => document.getElementById(id);
+const hk = n => "HK$" + n;
+const total = s => s.order.reduce((a, b) => a + b, 0);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* =====================================================================
+   COIN VISUALS — inline SVG, HK$2 gets its scalloped (wavy) edge
+   ===================================================================== */
+function scallopPath(R, n, bulge) {
+  const pts = [], ctrl = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    pts.push([R * Math.cos(a), R * Math.sin(a)]);
+    const am = ((i + 0.5) / n) * Math.PI * 2 - Math.PI / 2;
+    ctrl.push([(R + bulge) * Math.cos(am), (R + bulge) * Math.sin(am)]);
+  }
+  let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  for (let i = 0; i < n; i++) {
+    const p = pts[(i + 1) % n];
+    d += ` Q ${ctrl[i][0].toFixed(2)} ${ctrl[i][1].toFixed(2)} ${p[0].toFixed(2)} ${p[1].toFixed(2)}`;
+  }
+  return d + " Z";
+}
+
+function coinSVG(value) {
+  const R = 48;
+  let body;
+  if (value === 2) {
+    body = `<path d="${scallopPath(R, 12, 3.5)}" fill="url(#cg-silver)"/>`;
+  } else {
+    body = `<circle r="${R}" fill="url(#${value === 5 ? "cg-silver-dark" : "cg-silver"})"/>`;
+  }
+  const ring = value === 5
+    ? `<circle r="${R - 7}" fill="none" stroke="rgba(55,61,72,.35)" stroke-width="2.5"/><circle r="${R - 13}" fill="none" stroke="rgba(55,61,72,.2)" stroke-width="1.5"/>`
+    : `<circle r="${R - 7}" fill="none" stroke="rgba(55,61,72,.26)" stroke-width="2"/>`;
+  return `<svg class="coin-svg" viewBox="-56 -56 112 112" aria-hidden="true">
+    ${body}
+    ${ring}
+    <text x="0" y="-8" text-anchor="middle" class="coin-cur">HK$</text>
+    <text x="0" y="27" text-anchor="middle" class="coin-num">${value}</text>
+  </svg>`;
+}
+
+function coinEl(value, small) {
+  const d = document.createElement("div");
+  d.className = `coin c${value}` + (small ? " small" : "");
+  d.innerHTML = coinSVG(value);
+  return d;
+}
+
+/* =====================================================================
+   THE ONE ENTRY POINT — buttons, keyboard and Arduino all call this
+   ===================================================================== */
+function insertCoin(value, source = "button") {
+  value = Number(value);
+  if (!COINS.includes(value)) {
+    log(`Ignored: HK$${value} is not a known coin`, "err");
+    return false;
+  }
+  const expected = coinSource === "real" ? "arduino" : "virtual";
+  const actual = source === "arduino" ? "arduino" : "virtual";
+  if (expected !== actual) {
+    if (source === "arduino") log(`Ignored HK$${value}: switch Coins to "Real (Arduino)" to use the scale.`, "err");
+    return false;
+  }
+  const s = mode === "challenge" ? state.challenge : state.demo;
+  const before = total(s);
+  s.counts[value]++;
+  s.order.push(value);
+  if (source === "arduino") log(`Coin HK$${value} → ${mode === "demo" ? "Count Coins" : mode === "challenge" ? "Maths Challenge" : "savings"}`, "ok");
+  if (mode !== "challenge") recordInsert(value, before);
+  render(value);
+  return true;
+}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
+function fillTray(trayId, s, newest) {
+  const tray = $(trayId);
+  tray.innerHTML = "";
+  s.order.forEach((v, i) => {
+    const c = coinEl(v, true);
+    if (newest && i === s.order.length - 1) c.classList.add("drop");
+    tray.appendChild(c);
+  });
+}
+
+function bump(el) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
+
+function renderDemo(newest) {
+  const s = state.demo;
+  const t = total(s);
+  COINS.forEach(v => {
+    $("count-" + v).textContent = s.counts[v];
+    $("sub-" + v).textContent = hk(s.counts[v] * v);
+    const pct = t ? (s.counts[v] * v) / t * 100 : 0;
+    $("share-" + v).style.width = pct + "%";
+    $("share-pct-" + v).textContent = Math.round(pct) + "%";
+  });
+  $("totalCoins").textContent = s.order.length;
+  $("totalValue").textContent = hk(t);
+  fillTray("demoTray", s, newest);
+  if (newest) { bump($("totalValue")); bump($("count-" + newest)); }
+  renderGoal();
+}
+
+function renderChallenge(newest) {
+  const s = state.challenge;
+  const t = total(s), target = challengeTarget;
+  $("targetText").textContent = hk(target);
+  const bar = $("progressBar"), fb = $("feedback");
+  bar.style.width = Math.min(100, (t / target) * 100) + "%";
+  bar.classList.toggle("over", t > target);
+  bar.classList.toggle("done", t === target);
+  $("progressLabel").textContent = `${hk(t)} of ${hk(target)}`;
+
+  const wasWon = s.won;
+  fb.className = "feedback";
+  if (s.order.length === 0) {
+    fb.textContent = coinSource === "real" ? "Place a coin on the scale to begin!" : "Insert coins to begin!";
+  } else if (t < target) {
+    fb.classList.add("need");
+    fb.innerHTML = `You need ${hk(target - t)} more.<span class="sub">You have ${hk(t)} so far.</span>`;
+  } else if (t > target) {
+    fb.classList.add("over");
+    fb.innerHTML = `Oops! You are ${hk(t - target)} over.<span class="sub">You have ${hk(t)}. Press Start Again and try another way.</span>`;
+  } else {
+    fb.classList.add("win");
+    fb.innerHTML = `You got it!<span class="sub">${describe(s)} = ${hk(target)}<br>Press New Question to try another.</span>`;
+  }
+  s.won = (t === target);
+  if (s.won && !wasWon && newest) celebrate();
+
+  fillTray("challengeTray", s, newest);
+  $("miniCounts").innerHTML = COINS.map(v => `<span>$${v} × <b>${s.counts[v]}</b></span>`).join("")
+    + `<span>Coins: <b>${s.order.length}</b></span>`;
+}
+
+function describe(s) {
+  return COINS.slice().reverse().filter(v => s.counts[v] > 0)
+    .map(v => `${s.counts[v]} × $${v}`).join(" + ");
+}
+
+function renderCoach() {
+  $("coachSavings").textContent = "Your savings: " + hk(total(state.demo));
+  $("hoodState").innerHTML =
+    `Backend: <code>${coach.backend}</code> · Savings: <code>${hk(total(state.demo))}</code>` +
+    (goal ? ` · Goal: <code>${hk(goal)}</code>` : "") +
+    (coachLastPrompt ? `<br>Last AI prompt: <code>${escapeHtml(coachLastPrompt.slice(0, 160))}${coachLastPrompt.length > 160 ? "…" : ""}</code>` : "");
+}
+
+function render(newest) {
+  $("tab-demo").setAttribute("aria-selected", mode === "demo");
+  $("tab-challenge").setAttribute("aria-selected", mode === "challenge");
+  $("tab-coach").setAttribute("aria-selected", mode === "coach");
+  $("view-demo").classList.toggle("hidden", mode !== "demo");
+  $("view-challenge").classList.toggle("hidden", mode !== "challenge");
+  $("view-coach").classList.toggle("hidden", mode !== "coach");
+  if (mode === "demo") renderDemo(newest);
+  else if (mode === "challenge") renderChallenge(newest);
+  else renderCoach();
+  if (newest) {
+    const s = mode === "challenge" ? state.challenge : state.demo;
+    $("announcer").textContent = `HK$${newest} coin inserted. Total ${hk(total(s))}.`;
+  }
+}
+
+function celebrate() {
+  const box = document.createElement("div");
+  box.className = "confetti";
+  const colours = ["#2f6fde", "#1d8a4e", "#f5b301", "#e4572e", "#9b5de5"];
+  for (let i = 0; i < 80; i++) {
+    const p = document.createElement("i");
+    p.style.left = Math.random() * 100 + "vw";
+    p.style.background = colours[i % colours.length];
+    p.style.animationDuration = (1.6 + Math.random() * 1.6) + "s";
+    p.style.animationDelay = (Math.random() * .4) + "s";
+    box.appendChild(p);
+  }
+  document.body.appendChild(box);
+  setTimeout(() => box.remove(), 3800);
+}
+
+/* =====================================================================
+   SAVINGS GOAL + HISTORY (localStorage)
+   ===================================================================== */
+function renderGoal() {
+  const t = total(state.demo);
+  $("goalInput").value = goal || "";
+  if (!goal) {
+    $("goalBody").classList.add("hidden");
+    $("goalText").textContent = "No goal yet — set one and watch the progress bar fill as coins come in.";
+    return;
+  }
+  $("goalBody").classList.remove("hidden");
+  const pct = Math.min(100, t / goal * 100);
+  $("goalFill").style.width = pct + "%";
+  const left = goal - t;
+  if (left > 0) {
+    $("goalText").innerHTML = `${hk(t)} saved of ${hk(goal)} · <b>${hk(left)}</b> to go<br><span class="muted-small">≈ ${Math.ceil(left / 5)} more $5 coins, or ${Math.ceil(left / 2)} more $2 coins</span>`;
+  } else {
+    $("goalText").innerHTML = `<b>Goal reached: ${hk(goal)}!</b> Set a new goal to keep going.`;
+  }
+}
+
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function recordInsert(value, beforeTotal) {
+  const key = todayKey();
+  const rec = history[key] || (history[key] = { coins: {}, value: 0, inserts: 0 });
+  rec.coins[value] = (rec.coins[value] || 0) + 1;
+  rec.value += value;
+  rec.inserts++;
+  const keys = Object.keys(history).sort();
+  while (keys.length > HISTORY_DAYS) delete history[keys.shift()];
+  try { localStorage.setItem(LS.history, JSON.stringify(history)); } catch (e) {}
+  renderHistory();
+  if (goal > 0 && beforeTotal < goal && beforeTotal + value >= goal) {
+    celebrate();
+    $("announcer").textContent = `Goal reached: ${hk(goal)}!`;
+  }
+}
+
+function renderHistory() {
+  const rows = Object.keys(history).sort().reverse().slice(0, 14);
+  const body = $("historyBody");
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="4" class="hist-empty">No coins recorded yet.</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(k => {
+    const r = history[k];
+    const coinTxt = COINS.map(v => `$${v}×${r.coins[v] || 0}`).join(" ");
+    return `<tr><td>${k}</td><td>${coinTxt}</td><td class="num">${r.inserts}</td><td class="num">${hk(r.value)}</td></tr>`;
+  }).join("");
+}
+
+/* =====================================================================
+   MACHINE STATES (Real mode) — READY / WEIGHING / SORTING / ERROR
+   ===================================================================== */
+const MACHINE_UI = {
+  DISCONNECTED: { text: "Arduino not connected", pill: "No Arduino" },
+  READY:        { text: "Ready — insert a coin",  pill: "Ready" },
+  WEIGHING:     { text: "Weighing…",              pill: "Busy" },
+  SORTING:      { text: "Sorting…",               pill: "Busy" },
+  ERROR:        { text: "Weight not recognised — remove the coin", pill: "Error" }
+};
+
+function setMachine(status) {
+  clearTimeout(machine.timer);
+  machine.status = status;
+  if (status === "READY") resetScale();
+  renderMachine();
+}
+
+function renderMachine() {
+  const m = MACHINE_UI[machine.status];
+  const badge = $("machineState");
+  badge.textContent = m.text;
+  badge.className = "machine-state " + (machine.status === "READY" ? "st-ready" : machine.status === "ERROR" ? "st-error" : (machine.status === "WEIGHING" || machine.status === "SORTING") ? "st-busy" : "");
+
+  const pill = $("statusPill");
+  const busy = machine.status === "WEIGHING" || machine.status === "SORTING";
+  pill.className = "status-pill" + (machine.status === "READY" ? " st-ready" : machine.status === "ERROR" ? " st-error" : busy ? " st-busy" : "");
+  pill.querySelector(".pill-text").textContent = m.pill;
+  pill.classList.toggle("hidden", coinSource !== "real");
+
+  $("weightValue").textContent = machine.weight == null ? "—" : machine.weight.toFixed(2);
+  renderSpark();
+  renderWeightAxis();
+}
+
+function handleWeight(w) {
+  if (coinSource !== "real") { log("Ignored weight reading — switch Coins to Real (Arduino).", "err"); return; }
+  machine.weight = w;
+  machine.weightHistory.push(w);
+  if (machine.weightHistory.length > 60) machine.weightHistory.shift();
+  if (machine.status !== "SORTING") setMachine("WEIGHING");
+  else renderMachine();
+}
+
+function handleCoin(value) {
+  if (coinSource !== "real") { log(`Ignored HK$${value} — switch Coins to Real (Arduino) to use the scale.`, "err"); return; }
+  showDetected(value);
+  insertCoin(value, "arduino");
+  setMachine("SORTING");
+  machine.timer = setTimeout(() => setMachine("READY"), 1600);
+}
+
+function handleStatus(s) {
+  if (coinSource !== "real") { log(`Ignored status "${s}" — switch Coins to Real (Arduino).`, "err"); return; }
+  setMachine(s);
+}
+
+function renderWeightAxis() {
+  const ax = $("weightAxis");
+  const range = WEIGHT_MAX - WEIGHT_MIN;
+  let html = COINS.map(v => {
+    const [a, b] = COIN_META[v].band;
+    const left = (a - WEIGHT_MIN) / range * 100, w = (b - a) / range * 100;
+    return `<div class="band" style="left:${left}%;width:${w}%" title="$${v}: ${a}–${b} g"></div>`;
+  }).join("");
+  html += `<div class="axis-line"></div>`;
+  if (machine.weight != null) {
+    const pct = clamp((machine.weight - WEIGHT_MIN) / range * 100, 4, 96);
+    html += `<div class="marker" style="left:${pct}%"><span>${machine.weight.toFixed(2)}g</span></div>`;
+  }
+  ax.innerHTML = html;
+}
+
+function buildBandLegend() {
+  $("bandLegend").innerHTML = COINS.map(v => {
+    const [a, b] = COIN_META[v].band;
+    return `<span class="legend-chip">$${v}<span class="legend-range">${a}–${b} g</span></span>`;
+  }).join("");
+}
+
+function renderSpark() {
+  const h = machine.weightHistory;
+  const line = $("sparkLine");
+  $("sparkEmpty").classList.toggle("hidden", h.length >= 2);
+  if (h.length < 2) { line.setAttribute("points", ""); return; }
+  const pts = h.map((w, i) =>
+    `${((i / 59) * 240).toFixed(1)},${(40 - clamp((w - WEIGHT_MIN) / (WEIGHT_MAX - WEIGHT_MIN), 0, 1) * 36 - 2).toFixed(1)}`
+  ).join(" ");
+  line.setAttribute("points", pts);
+}
+
+/* Big "coin on the scale" display in Real mode */
+let scaleTimer = null;
+function showDetected(value) {
+  const slot = $("scaleSlot");
+  slot.innerHTML = "";
+  const c = coinEl(value);
+  c.classList.add("drop");
+  slot.appendChild(c);
+  clearTimeout(scaleTimer);
+  scaleTimer = setTimeout(() => { if (machine.status !== "WEIGHING") resetScale(); }, 2500);
+}
+function resetScale() {
+  clearTimeout(scaleTimer);
+  $("scaleSlot").innerHTML = '<span class="scale-wait">?</span>';
+}
+
+/* =====================================================================
+   MODES & BUTTONS
+   ===================================================================== */
+function setMode(m) { mode = m; render(); }
+
+function setSource(src) {
+  coinSource = src;
+  $("src-virtual").setAttribute("aria-checked", src === "virtual");
+  $("src-real").setAttribute("aria-checked", src === "real");
+  $("virtualPanel").classList.toggle("hidden", src !== "virtual");
+  $("realPanel").classList.toggle("hidden", src !== "real");
+  // Start fresh so virtual and real coins are never mixed
+  resetState(state.demo); resetState(state.challenge);
+  resetScale();
+  renderDemo(); renderChallenge();
+  if (src === "real" && !port) setMachine("DISCONNECTED");
+  else if (src === "virtual") { machine.status = "DISCONNECTED"; machine.weight = null; renderMachine(); }
+}
+
+$("src-virtual").addEventListener("click", () => setSource("virtual"));
+$("src-real").addEventListener("click", () => setSource("real"));
+$("tab-demo").addEventListener("click", () => setMode("demo"));
+$("tab-challenge").addEventListener("click", () => setMode("challenge"));
+$("tab-coach").addEventListener("click", () => setMode("coach"));
+
+$("demoReset").addEventListener("click", () => { resetState(state.demo); renderDemo(); });
+$("startAgain").addEventListener("click", () => { resetState(state.challenge); renderChallenge(); });
+$("newQuestion").addEventListener("click", () => {
+  challengeTarget = newTarget();
+  resetState(state.challenge);
+  renderChallenge();
+  $("announcer").textContent = `New question: can you make ${hk(challengeTarget)}?`;
+});
+
+$("goalSet").addEventListener("click", () => {
+  const v = Math.floor(Number($("goalInput").value));
+  if (v > 0) {
+    goal = v;
+    localStorage.setItem(LS.goal, String(v));
+    renderGoal();
+    $("announcer").textContent = `Savings goal set: ${hk(goal)}.`;
+  }
+});
+$("goalClear").addEventListener("click", () => {
+  goal = 0;
+  localStorage.removeItem(LS.goal);
+  renderGoal();
+});
+$("historyClear").addEventListener("click", () => {
+  history = {};
+  localStorage.removeItem(LS.history);
+  renderHistory();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const map = { "1": 1, "2": 2, "5": 5 };
+  if (map[e.key] && COINS.includes(map[e.key])) insertCoin(map[e.key], "keyboard");
+});
+
+/* =====================================================================
+   AI MONEY COACH — offline maths + templates, optional DeepSeek via Poe
+   ===================================================================== */
+const TIPS = [
+  "Pay yourself first: put coins aside before you spend the rest.",
+  "Small coins add up — $5 a week is $260 a year.",
+  "Before you buy something, ask: do I need it, or do I just want it?",
+  "Money you can see is money you control — keep tracking what you save.",
+];
+let tipIndex = 0;
+
+const CHIP_QUESTIONS = {
+  buy:  "What can I buy with my savings?",
+  goal: "How long until I reach my savings goal?",
+  tip:  "Give me a saving tip"
+};
+
+function answerOffline(q, savings) {
+  if (q === "buy") {
+    const lines = PRICES
+      .map(p => ({ n: Math.floor(savings / p.price), name: p.name, price: p.price }))
+      .filter(x => x.n > 0).slice(0, 5)
+      .map(x => `${x.n} × ${x.name} (${hk(x.price)} each)`);
+    if (!lines.length) return `You have ${hk(savings)}. Not enough for the items I know yet — keep saving!`;
+    return `You have ${hk(savings)}. That's about:<br>• ${lines.join("<br>• ")}`;
+  }
+  if (q === "goal") {
+    if (!goal) return "Set a savings goal first — it's on the Count Coins tab.";
+    const left = goal - total(state.demo);
+    if (left <= 0) return `You've reached your goal of ${hk(goal)}! Time to set a new one.`;
+    const weeks = Math.ceil(left / 5);
+    return `You need ${hk(left)} more to reach ${hk(goal)}.<br>That's ≈ ${Math.ceil(left / 5)} × $5 coins. If you save one $5 coin a week, that's about ${weeks} week${weeks > 1 ? "s" : ""}.`;
+  }
+  if (q === "tip") {
+    return "Tip: " + TIPS[tipIndex++ % TIPS.length];
+  }
+  return `I can help with questions about your savings. Tap one of the suggestion buttons above, or switch the answer engine to AI (gear icon) to ask anything.`;
+}
+
+async function callCoachLLM(question, savings) {
+  const prompt = `The student has saved HK$${savings}${goal ? ` and their goal is HK$${goal}` : ""}. Question: ${question}`;
+  coachLastPrompt = prompt;
+  renderCoach();
+  // Verify endpoint shape against the current Poe API docs.
+  const res = await fetch("https://api.poe.com/bot/" + encodeURIComponent(POE_BOT), {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + coach.token, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bot: POE_BOT,
+      messages: [
+        { role: "system", content: "You are CoinWise Coach, a friendly money coach for Hong Kong secondary students. Keep answers under 60 words, encouraging and practical. Use HKD." },
+        { role: "user", content: prompt }
+      ]
+    })
+  });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  return data.text || (data.response && data.response.text) ||
+         (Array.isArray(data.messages) && data.messages[data.messages.length - 1].text) || "";
+}
+
+function addChat(kind, html) {
+  const box = $("chatBox");
+  const m = document.createElement("div");
+  m.className = "msg " + kind;
+  if (kind === "user" || kind === "note") m.textContent = html;
+  else m.innerHTML = html;
+  box.appendChild(m);
+  box.scrollTop = box.scrollHeight;
+  return m;
+}
+
+function coachAsk(q, label, raw) {
+  const savings = total(state.demo);
+  addChat("user", label);
+  const qText = raw ?? q;
+  if (coach.backend === "poe" && coach.token) {
+    const note = addChat("note", "Asking the AI coach…");
+    callCoachLLM(qText, savings).then(text => {
+      if (text) {
+        note.remove();
+        addChat("bot", escapeHtml(text).replace(/\n/g, "<br>"));
+        addChat("note", "Answered by the AI coach (DeepSeek via Poe).");
+      } else {
+        note.textContent = "AI coach returned an empty answer — showing the offline answer instead.";
+        addChat("bot", answerOffline(q, savings));
+      }
+    }).catch(() => {
+      note.textContent = "AI coach unreachable — showing the offline answer instead.";
+      addChat("bot", answerOffline(q, savings));
+    });
+  } else {
+    addChat("bot", answerOffline(q, savings));
+    if (qText !== q) addChat("note", "Offline mode: local maths + templates. Enable the AI coach with the gear button.");
+  }
+}
+
+$("chatForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const q = $("chatInput").value.trim();
+  if (!q) return;
+  $("chatInput").value = "";
+  coachAsk(q, q, q);
+});
+document.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => coachAsk(chip.dataset.q, chip.textContent, CHIP_QUESTIONS[chip.dataset.q]));
+});
+
+$("coachSettingsBtn").addEventListener("click", e => {
+  e.stopPropagation();
+  $("coachPopover").classList.toggle("hidden");
+  $("coachBackend").value = coach.backend;
+  $("coachToken").value = coach.token;
+});
+document.addEventListener("click", e => {
+  if (!$("coachPopover").classList.contains("hidden") && !$("coachPopover").contains(e.target) && e.target !== $("coachSettingsBtn")) {
+    $("coachPopover").classList.add("hidden");
+  }
+});
+$("coachSave").addEventListener("click", () => {
+  coach.backend = $("coachBackend").value;
+  coach.token = $("coachToken").value.trim();
+  try { localStorage.setItem(LS.coach, JSON.stringify(coach)); } catch (e) {}
+  $("coachPopover").classList.add("hidden");
+  addChat("note", coach.backend === "poe" && coach.token ? "AI coach enabled." : "Offline coach enabled.");
+  renderCoach();
+});
+
+/* =====================================================================
+   SERIAL LOG + TEST LINE (works without hardware)
+   ===================================================================== */
+function log(msg, cls) {
+  const box = $("logBox");
+  const line = document.createElement("div");
+  if (cls) line.className = cls;
+  line.textContent = new Date().toLocaleTimeString() + "  " + msg;
+  box.appendChild(line);
+  while (box.childNodes.length > 200) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+}
+function handleSerialLine(line) {
+  log("← " + line);
+  const act = parseArduinoLine(line);
+  if (!act) return;
+  if (act.kind === "coin") handleCoin(act.value);
+  else if (act.kind === "weight") handleWeight(act.value);
+  else handleStatus(act.value);
+}
+$("simForm").addEventListener("submit", e => { e.preventDefault(); handleSerialLine($("simInput").value); });
+
+function simCoin(v) {
+  handleSerialLine(`{"type":"weight","value":${COIN_META[v].nominal}}`);
+  setTimeout(() => handleSerialLine(`{"type":"coin","value":${v}}`), 900);
+  setTimeout(() => handleSerialLine("READY"), 2900);
+}
+function simUnknown() {
+  handleSerialLine('{"type":"weight","value":11.00}');
+  setTimeout(() => handleSerialLine("ERROR"), 900);
+  setTimeout(() => handleSerialLine("READY"), 3000);
+}
+$("demo1").addEventListener("click", () => simCoin(1));
+$("demo2").addEventListener("click", () => simCoin(2));
+$("demo5").addEventListener("click", () => simCoin(5));
+$("demoUnknown").addEventListener("click", simUnknown);
+$("demoReady").addEventListener("click", () => handleSerialLine("READY"));
+
+/* =====================================================================
+   WEB SERIAL (Chrome / Edge on desktop computers)
+   ===================================================================== */
+let port = null, reader = null, readLoopDone = null, keepReading = false;
+
+function setSerialStatus(text, on) {
+  $("serialStatus").textContent = text;
+  $("serialDot").style.background = on ? "var(--good)" : "#b3bccd";
+  $("serialDot").style.boxShadow = on ? "0 0 0 5px rgba(29,138,78,.18)" : "none";
+  $("connectBtn").textContent = on ? "Disconnect" : "Connect Arduino";
+  $("connectBtn").classList.toggle("secondary", !!on);
+  $("baud").classList.toggle("hidden", !!on);
+}
+
+if (!("serial" in navigator)) {
+  $("connectBtn").disabled = true;
+  $("serialStatus").textContent = "Real coins need Chrome or Edge on a computer. Virtual coins work here.";
+  log("Web Serial is not available in this browser.", "err");
+} else {
+  $("connectBtn").addEventListener("click", () => port ? disconnect() : connect());
+  navigator.serial.addEventListener("disconnect", e => {
+    if (e.target === port) { log("Arduino unplugged.", "err"); cleanup(); }
+  });
+}
+
+async function connect() {
+  try {
+    port = await navigator.serial.requestPort();
+    const baudRate = Number($("baud").value);
+    await port.open({ baudRate });
+    setSerialStatus("Arduino connected", true);
+    log(`Connected at ${baudRate} baud.`, "ok");
+    setMachine("READY");
+    keepReading = true;
+    readLoopDone = readLoop();
+  } catch (err) {
+    if (err.name !== "NotFoundError") log("Could not connect: " + err.message, "err");
+    port = null;
+    setSerialStatus(err.name === "NotFoundError" ? "Arduino not connected" : "Could not connect. Check the cable and try again.", false);
+  }
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (port && port.readable && keepReading) {
+    reader = port.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        let idx;
+        while ((idx = buffer.search(/\r?\n/)) >= 0) {
+          const line = buffer.slice(0, idx);
+          buffer = buffer.slice(buffer[idx] === "\r" ? idx + 2 : idx + 1);
+          handleSerialLine(line);
+        }
+        if (buffer.length > 1000) buffer = ""; // safety: no newline for too long
+      }
+    } catch (err) {
+      if (keepReading) log("Read error: " + err.message, "err");
+    } finally {
+      reader.releaseLock();
+      reader = null;
+    }
+  }
+}
+
+async function disconnect() {
+  keepReading = false;
+  try { if (reader) await reader.cancel(); } catch (e) {}
+  try { await readLoopDone; } catch (e) {}
+  try { await port.close(); } catch (e) {}
+  log("Disconnected.");
+  cleanup();
+}
+function cleanup() { port = null; reader = null; keepReading = false; setSerialStatus("Arduino not connected", false); setMachine("DISCONNECTED"); }
+
+/* =====================================================================
+   START
+   ===================================================================== */
+function buildCoinButtons() {
+  const list = $("coinList");
+  COINS.forEach(v => {
+    const row = document.createElement("div");
+    row.className = "coin-row";
+    row.appendChild(coinEl(v));
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = hk(v);
+    const small = document.createElement("small");
+    small.textContent = `≈ ${COIN_META[v].nominal} g`;
+    name.appendChild(small);
+    row.appendChild(name);
+    const b = document.createElement("button");
+    b.className = "insert"; b.textContent = "Insert";
+    b.setAttribute("aria-label", `Insert ${v} dollar coin`);
+    b.addEventListener("click", () => insertCoin(v, "button"));
+    row.appendChild(b);
+    list.appendChild(row);
+  });
+
+  const body = $("countBody");
+  COINS.forEach(v => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="coin-cell"><div class="cell-coin"></div></td><td class="num" id="count-${v}">0</td><td class="num" id="sub-${v}">HK$0</td>`;
+    tr.querySelector(".cell-coin").append(coinEl(v), document.createTextNode(hk(v) + " coins"));
+    body.appendChild(tr);
+  });
+}
+
+$("brandLogo").appendChild(coinEl(2));
+
+buildCoinButtons();
+challengeTarget = newTarget();
+render();
+renderMachine();
+renderHistory();
+buildBandLegend();
+resetScale();
+addChat("bot", "Hi! I'm your CoinWise coach. I can see what's in your coin bank — ask me what you could buy, or how close you are to your goal.");
+log("Ready. Virtual coins work without an Arduino. Choose Real (Arduino) to use the scale.");
+log('Tip: in Real mode, type a line below and press "Test this line" to pretend the Arduino sent it, or use the quick demo buttons.');
+log("Accepted lines: {\"type\":\"coin\",\"value\":2} · {\"type\":\"weight\",\"value\":8.41} · READY / WEIGHING / SORTING / ERROR · a bare number like 2 or 8.41");
+</script>
+</body>
+</html>
