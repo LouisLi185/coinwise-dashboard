@@ -131,9 +131,12 @@
   .coin { --size: clamp(60px, 6vw, 88px); width: var(--size); height: var(--size); flex: none; user-select: none; }
   .coin.small { --size: clamp(36px, 3.2vw, 48px); }
   .coin svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 2px 3px rgba(22,29,43,.22)); }
-  .coin .coin-num { font-size: 33px; font-weight: 800; fill: rgba(38,45,60,.8); font-family: inherit; }
-  .coin .coin-cur { font-size: 11px; font-weight: 700; fill: rgba(38,45,60,.48); font-family: inherit; }
-  .coin.small .coin-num { font-size: 19px; }
+  .coin .coin-num { font-size: 34px; font-weight: 800; fill: rgba(38,45,60,.78); font-family: Georgia, "Times New Roman", serif; }
+  .coin .coin-micro { font-size: 6.5px; font-weight: 700; fill: rgba(38,45,60,.55); letter-spacing: .06em; font-family: inherit; }
+  .coin .coin-sub { font-size: 7.4px; font-weight: 700; fill: rgba(38,45,60,.5); letter-spacing: .18em; font-family: inherit; }
+  .coin.small .coin-num { font-size: 20px; }
+  .coin.small .coin-micro { font-size: 4.8px; }
+  .coin.small .coin-sub { font-size: 5px; }
 
   .drop { animation: drop .35s cubic-bezier(.3,1.4,.6,1); }
   @keyframes drop { from { transform: translateY(-40px) scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -171,7 +174,9 @@
 
   .weight-axis { position: relative; height: 56px; margin: 24px 4px 0; }
   .weight-axis .axis-line { position: absolute; left: 0; right: 0; top: 24px; height: 2px; background: #e3e7ee; border-radius: 2px; }
-  .weight-axis .band { position: absolute; top: 15px; height: 20px; border-radius: 6px; background: rgba(23,138,82,.13); border: 1px solid rgba(23,138,82,.35); }
+  .weight-axis .band { position: absolute; top: 15px; height: 20px; border-radius: 6px; background: rgba(138,148,166,.13); border: 1px solid rgba(138,148,166,.4); }
+  .weight-axis .band.c2 { background: rgba(217,164,65,.16); border-color: rgba(217,164,65,.5); }
+  .weight-axis .band.c5 { background: rgba(176,118,82,.16); border-color: rgba(176,118,82,.5); }
   .weight-axis .marker { position: absolute; top: 6px; bottom: 22px; width: 2px; background: var(--ink); border-radius: 2px; transition: left .25s ease; }
   .weight-axis .marker span {
     position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
@@ -181,9 +186,11 @@
   .axis-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
   .legend-chip {
     display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid rgba(23,138,82,.35); background: rgba(23,138,82,.07); color: var(--good);
+    border: 1px solid rgba(138,148,166,.45); background: rgba(138,148,166,.08); color: #5f6878;
     border-radius: 999px; padding: 4px 12px; font-size: .75em; font-weight: 700;
   }
+  .legend-chip.c2 { border-color: rgba(217,164,65,.5); background: rgba(217,164,65,.09); color: #97752c; }
+  .legend-chip.c5 { border-color: rgba(176,118,82,.5); background: rgba(176,118,82,.09); color: #8f5c3a; }
   .legend-chip .legend-range { font-family: var(--font-mono); font-weight: 500; color: var(--muted); }
   .axis-note { color: var(--muted); font-size: .72em; margin-top: 8px; }
 
@@ -202,9 +209,9 @@
   .dist-row > span:last-child { width: 3.2em; text-align: right; color: var(--muted); font-family: var(--font-mono); font-size: .9em; }
   .dist-track { flex: 1; height: 9px; background: #eef1f6; border-radius: 999px; overflow: hidden; }
   .dist-fill { height: 100%; width: 0; border-radius: 999px; transition: width .45s ease; }
-  .dist-fill.c1 { background: #7aa2d8; }
-  .dist-fill.c2 { background: #52b39a; }
-  .dist-fill.c5 { background: #e3b04f; }
+  .dist-fill.c1 { background: #8a94a6; }
+  .dist-fill.c2 { background: #d9a441; }
+  .dist-fill.c5 { background: #b07652; }
 
   .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
   .stat { background: #fafbfd; border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
@@ -301,7 +308,9 @@
     display: flex; flex-direction: column; gap: 8px; background: #fafbfd;
   }
   .msg { max-width: 88%; padding: 10px 14px; border-radius: 12px; line-height: 1.5; font-size: .9em; }
-  .msg.bot { background: #fff; border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.bot { background: #fff; border: 1px solid var(--line); align-self: flex-start; border-bottom-left-radius: 4px; position: relative; padding-right: 36px; }
+  .msg-speak { position: absolute; right: 6px; bottom: 6px; border: 0; background: transparent; font-size: .95em; opacity: .5; padding: 2px 4px; border-radius: 6px; line-height: 1; }
+  .msg-speak:hover { opacity: 1; background: #eef1f6; }
   .msg.user { background: var(--accent); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 600; }
   .msg.note { align-self: flex-start; color: var(--muted); font-size: .74em; padding: 2px 8px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
@@ -313,6 +322,9 @@
   .chat-input { display: flex; gap: 10px; }
   .chat-input input { flex: 1; font: inherit; font-size: .88em; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
   .chat-input input:focus { border-color: var(--accent); }
+  .btn.mic { padding: 11px 15px; border-radius: 999px; font-size: 1.05em; }
+  .btn.mic.listening { background: var(--bad); animation: micPulse 1.2s ease-in-out infinite; }
+  @keyframes micPulse { 50% { box-shadow: 0 0 0 7px rgba(192,57,43,.16); } }
 
   /* ---------- Serial log ---------- */
   details.log { margin: 0 clamp(16px, 3vw, 40px) 30px; max-width: 1700px; }
@@ -337,15 +349,27 @@
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <radialGradient id="cg-silver" cx="35%" cy="30%" r="85%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="45%" stop-color="#d8dce2"/>
-      <stop offset="100%" stop-color="#9aa1ab"/>
+      <stop offset="0%" stop-color="#fbfcfd"/>
+      <stop offset="35%" stop-color="#e3e7ec"/>
+      <stop offset="65%" stop-color="#c6ccd6"/>
+      <stop offset="88%" stop-color="#aab1bd"/>
+      <stop offset="100%" stop-color="#8f97a5"/>
     </radialGradient>
-    <radialGradient id="cg-silver-dark" cx="35%" cy="30%" r="85%">
-      <stop offset="0%" stop-color="#f0f2f5"/>
-      <stop offset="45%" stop-color="#b6bcc5"/>
-      <stop offset="100%" stop-color="#78808c"/>
+    <radialGradient id="cg-gold" cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#fdf9ec"/>
+      <stop offset="35%" stop-color="#f1e4bd"/>
+      <stop offset="65%" stop-color="#dec789"/>
+      <stop offset="88%" stop-color="#c2a15c"/>
+      <stop offset="100%" stop-color="#9f7f41"/>
     </radialGradient>
+    <radialGradient id="cg-copper" cx="35%" cy="30%" r="85%">
+      <stop offset="0%" stop-color="#faf0e7"/>
+      <stop offset="35%" stop-color="#e9cfb6"/>
+      <stop offset="65%" stop-color="#d1a87f"/>
+      <stop offset="88%" stop-color="#b2825a"/>
+      <stop offset="100%" stop-color="#8f613e"/>
+    </radialGradient>
+    <path id="coin-arc-top" d="M -39 0 A 39 39 0 0 0 39 0" fill="none"/>
   </defs>
 </svg>
 
@@ -395,9 +419,9 @@
       <span class="dot" id="serialDot" aria-hidden="true" style="width:12px;height:12px;border-radius:50%;background:#b3bccd;flex:none"></span>
       <span class="conn-text" id="serialStatus">Arduino not connected</span>
       <select class="baud" id="baud" aria-label="Baud rate">
-        <option value="9600" selected>9600 baud</option>
+        <option value="9600">9600 baud</option>
         <option value="57600">57600 baud</option>
-        <option value="115200">115200 baud</option>
+        <option value="115200" selected>115200 baud</option>
       </select>
       <button class="btn" id="connectBtn">Connect Arduino</button>
     </div>
@@ -531,12 +555,14 @@
       <button class="chip" data-q="reject">Why does it stop for unknown coins?</button>
     </div>
     <form class="chat-input" id="chatForm">
+      <button type="button" class="btn mic" id="micBtn" aria-label="Ask by voice" title="Ask by voice">🎤</button>
       <input id="chatInput" placeholder="Ask the coach anything…" aria-label="Ask the coach" autocomplete="off">
       <button class="btn" type="submit">Send</button>
     </form>
     <details class="hood">
       <summary>Under the hood (for teachers and students)</summary>
       <p>Offline mode: the page does the maths itself — your savings, goal, challenge hints and a small price list — and fills in a template answer. AI mode sends a short prompt with the same numbers to DeepSeek (via Poe) and shows its reply. If the AI is unreachable, the offline answer is always available.</p>
+      <p>Voice: the 🎤 button and the 🔊 read-aloud use the browser's built-in speech engine (Web Speech API) — no extra keys needed. Voice recognition works in Chrome and Edge; if you ask by voice, the answer is read back to you.</p>
       <p id="hoodState"></p>
     </details>
   </section>
@@ -680,22 +706,37 @@ function scallopPath(R, n, bulge) {
   return d + " Z";
 }
 
+// Simplified bauhinia flower (the Hong Kong coin emblem) as a watermark
+function bauhinia() {
+  let petals = "";
+  for (let i = 0; i < 5; i++) {
+    petals += `<path d="M 0 -27 C 8 -21 8 -10 0 -4.5 C -8 -10 -8 -21 0 -27 Z" transform="rotate(${i * 72})"/>`;
+  }
+  return `<g fill="#4a5262" opacity=".14">${petals}<circle r="3"/></g>`;
+}
+
 function coinSVG(value) {
   const R = 48;
-  let body;
-  if (value === 2) {
-    body = `<path d="${scallopPath(R, 12, 3.5)}" fill="url(#cg-silver)"/>`;
-  } else {
-    body = `<circle r="${R}" fill="url(#${value === 5 ? "cg-silver-dark" : "cg-silver"})"/>`;
-  }
-  const ring = value === 5
-    ? `<circle r="${R - 7}" fill="none" stroke="rgba(55,61,72,.35)" stroke-width="2.5"/><circle r="${R - 13}" fill="none" stroke="rgba(55,61,72,.2)" stroke-width="1.5"/>`
-    : `<circle r="${R - 7}" fill="none" stroke="rgba(55,61,72,.26)" stroke-width="2"/>`;
+  const grad = { 1: "cg-silver", 2: "cg-gold", 5: "cg-copper" }[value];
+  const body = value === 2
+    ? `<path d="${scallopPath(R, 12, 3.5)}" fill="url(#${grad})"/>`
+    : `<circle r="${R}" fill="url(#${grad})"/>`;
+  // raised rim + inner bevel highlight, following the scallop on the $2
+  const rim = value === 2
+    ? `<path d="${scallopPath(R - 2.5, 12, 3.5)}" fill="none" stroke="rgba(63,70,84,.4)" stroke-width="1.5"/><path d="${scallopPath(R - 5.5, 12, 3.5)}" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".9"/>`
+    : `<circle r="${R - 2.5}" fill="none" stroke="rgba(63,70,84,.4)" stroke-width="1.5"/><circle r="${R - 5.5}" fill="none" stroke="rgba(255,255,255,.65)" stroke-width=".9"/>`;
+  // the $5 is the thick one — a milled ring sells the extra heft
+  const milled = value === 5
+    ? `<circle r="${R - 9.5}" fill="none" stroke="rgba(63,70,84,.22)" stroke-width="1.1" stroke-dasharray="1.7 2.5"/>`
+    : "";
   return `<svg class="coin-svg" viewBox="-56 -56 112 112" aria-hidden="true">
     ${body}
-    ${ring}
-    <text x="0" y="-8" text-anchor="middle" class="coin-cur">HK$</text>
-    <text x="0" y="27" text-anchor="middle" class="coin-num">${value}</text>
+    ${rim}
+    ${milled}
+    <text class="coin-micro"><textPath href="#coin-arc-top" startOffset="50%" text-anchor="middle">香港 · HONG KONG</textPath></text>
+    ${bauhinia()}
+    <text x="0" y="7" text-anchor="middle" class="coin-num">${value}</text>
+    <text x="0" y="21.5" text-anchor="middle" class="coin-sub">DOLLARS</text>
   </svg>`;
 }
 
@@ -1020,7 +1061,7 @@ function renderWeightAxis() {
   let html = COINS.map(v => {
     const [a, b] = COIN_META[v].band;
     const left = (a - WEIGHT_MIN) / range * 100, w = (b - a) / range * 100;
-    return `<div class="band" style="left:${left}%;width:${w}%" title="$${v}: ${a}–${b} g"></div>`;
+    return `<div class="band c${v}" style="left:${left}%;width:${w}%" title="$${v}: ${a}–${b} g"></div>`;
   }).join("");
   html += `<div class="axis-line"></div>`;
   if (machine.weight != null) {
@@ -1033,7 +1074,7 @@ function renderWeightAxis() {
 function buildBandLegend() {
   $("bandLegend").innerHTML = COINS.map(v => {
     const [a, b] = COIN_META[v].band;
-    return `<span class="legend-chip">$${v}<span class="legend-range">${a}–${b} g</span></span>`;
+    return `<span class="legend-chip c${v}">$${v}<span class="legend-range">${a}–${b} g</span></span>`;
   }).join("");
 }
 
@@ -1252,18 +1293,109 @@ async function callCoachLLM(question, savings) {
          (Array.isArray(data.messages) && data.messages[data.messages.length - 1].text) || "";
 }
 
+/* =====================================================================
+   VOICE — Web Speech API (Chrome/Edge): ask by voice, answers read aloud
+   ===================================================================== */
+let recog = null, voiceListening = false;
+function initVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    $("micBtn").classList.add("hidden");
+    addChat("note", "Voice input needs Chrome or Edge — this browser's speech recognition is missing, but typing works fine.");
+    return;
+  }
+  recog = new SR();
+  recog.lang = "en-US";
+  recog.interimResults = true;
+  recog.maxAlternatives = 1;
+  recog.onresult = e => {
+    let final = "", interim = "";
+    for (const r of e.results) (r.isFinal ? final += r[0].transcript : interim += r[0].transcript);
+    if (final.trim()) {
+      recog.stop();
+      $("chatInput").value = final.trim();
+      submitChat(true); // spoken question → read the answer aloud
+    } else {
+      $("chatInput").value = interim.trim();
+    }
+  };
+  recog.onend = () => { voiceListening = false; setMic(false); };
+  recog.onerror = ev => {
+    voiceListening = false; setMic(false);
+    if (ev.error === "not-allowed" || ev.error === "service-not-allowed")
+      addChat("note", "Microphone blocked — allow it for this page in the browser and try again.");
+    else if (ev.error !== "aborted" && ev.error !== "no-speech")
+      addChat("note", "Voice input hiccup (" + ev.error + ") — type your question instead.");
+  };
+}
+function setMic(on) {
+  $("micBtn").classList.toggle("listening", on);
+  $("micBtn").textContent = on ? "⏹" : "🎤";
+}
+$("micBtn").addEventListener("click", () => {
+  if (!recog) return;
+  if (voiceListening) { recog.stop(); return; }
+  $("chatInput").value = "";
+  voiceListening = true;
+  setMic(true);
+  try { recog.start(); } catch (e) { voiceListening = false; setMic(false); }
+});
+
+function speakMsg(m) {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance((m.querySelector(".msg-text") || m).textContent);
+    u.lang = "en-US";
+    u.rate = 1.05;
+    u.pitch = 1.1;
+    const voices = speechSynthesis.getVoices();
+    const v = voices.find(v => /^en/i.test(v.lang) && /Google|Samantha|Daniel|Karen|Microsoft|Natural/i.test(v.name))
+      || voices.find(v => /^en/i.test(v.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
 function addChat(kind, html) {
   const box = $("chatBox");
   const m = document.createElement("div");
   m.className = "msg " + kind;
   if (kind === "user" || kind === "note") m.textContent = html;
-  else m.innerHTML = html;
+  else {
+    const s = document.createElement("span");
+    s.className = "msg-text";
+    s.innerHTML = html;
+    m.appendChild(s);
+  }
+  if (kind === "bot" && "speechSynthesis" in window) {
+    const b = document.createElement("button");
+    b.className = "msg-speak";
+    b.textContent = "🔊";
+    b.title = "Read aloud";
+    b.setAttribute("aria-label", "Read this answer aloud");
+    b.addEventListener("click", () => speakMsg(m));
+    m.appendChild(b);
+  }
   box.appendChild(m);
   box.scrollTop = box.scrollHeight;
   return m;
 }
 
-function coachAsk(q, label, raw) {
+// Match free-text (and spoken) questions to the right offline answer. Order matters.
+function routeOffline(q) {
+  const t = String(q).toLowerCase();
+  if (/(hint|stuck|help|challenge)/.test(t)) return "hint";
+  if (/(long|until|reach|goal)/.test(t)) return "goal";
+  if (/(buy|afford|price)/.test(t)) return "buy";
+  if (/(stop|reject|unknown|refuse|fail)/.test(t)) return "reject";
+  if (/(wavy|scallop|edge|wave)/.test(t)) return "scallop";
+  if (/(how|know|identif|recogni|machine|weight|weigh|sensor)/.test(t)) return "how";
+  if (/(tip|save|saving|money)/.test(t)) return "tip";
+  return null;
+}
+
+function coachAsk(q, label, raw, speak) {
   const savings = total(state.demo);
   addChat("user", label);
   const qText = raw ?? q;
@@ -1272,28 +1404,37 @@ function coachAsk(q, label, raw) {
     callCoachLLM(qText, savings).then(text => {
       if (text) {
         note.remove();
-        addChat("bot", escapeHtml(text).replace(/\n/g, "<br>"));
+        const m = addChat("bot", escapeHtml(text).replace(/\n/g, "<br>"));
         addChat("note", "Answered by the AI coach (DeepSeek via Poe).");
+        if (speak) speakMsg(m);
       } else {
         note.textContent = "AI coach returned an empty answer — showing the offline answer instead.";
-        addChat("bot", answerOffline(q, savings));
+        const m = addChat("bot", answerOffline(q, savings));
+        if (speak) speakMsg(m);
       }
     }).catch(() => {
       note.textContent = "AI coach unreachable — showing the offline answer instead.";
-      addChat("bot", answerOffline(q, savings));
+      const m = addChat("bot", answerOffline(q, savings));
+      if (speak) speakMsg(m);
     });
   } else {
-    addChat("bot", answerOffline(q, savings));
+    const key = routeOffline(qText) || q;
+    const m = addChat("bot", answerOffline(key, savings));
     if (qText !== q) addChat("note", "Offline mode: local maths + templates. Enable the AI coach with the gear button.");
+    if (speak) speakMsg(m);
   }
+}
+
+function submitChat(voice) {
+  const q = $("chatInput").value.trim();
+  if (!q) return;
+  $("chatInput").value = "";
+  coachAsk(q, q, q, voice);
 }
 
 $("chatForm").addEventListener("submit", e => {
   e.preventDefault();
-  const q = $("chatInput").value.trim();
-  if (!q) return;
-  $("chatInput").value = "";
-  coachAsk(q, q, q);
+  submitChat(false);
 });
 document.querySelectorAll(".chip").forEach(chip => {
   chip.addEventListener("click", () => {
@@ -1483,6 +1624,7 @@ renderHistory();
 buildBandLegend();
 resetScale();
 addChat("bot", "Hi! I'm your CoinWise coach. Ask me about your savings, ask for a hint when the Maths Challenge gets tricky — or ask me how this machine knows which coin is which!");
+initVoice();
 log("Ready. Virtual coins work without an Arduino. Choose Real (Arduino) to use the scale.");
 log('Tip: in Real mode, type a line below and press "Test this line" to pretend the Arduino sent it, or use the quick demo buttons.');
 log("Accepted lines: {\"type\":\"coin\",\"value\":2} · {\"type\":\"weight\",\"value\":8.41} · READY / WEIGHING / SORTING / ERROR · a bare number like 2 or 8.41");
