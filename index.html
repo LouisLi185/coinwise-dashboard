@@ -232,6 +232,18 @@
   .goal-fill { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #e3b04f, #d99a1f); transition: width .45s ease; }
   .goal-text { margin-top: 10px; font-size: .86em; }
   .goal-text .muted-small { color: var(--muted); font-size: .85em; }
+  .goal-item-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  .goal-item-row label { font-size: .72em; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .goal-item-row select {
+    font: inherit; font-size: .92em; padding: 9px 13px; border-radius: 10px; border: 1px solid var(--line);
+    background: #fff; color: var(--ink); max-width: 100%;
+  }
+  .goal-item-row select:focus { border-color: var(--accent); }
+
+  /* ---------- Sound toggle ---------- */
+  .sound-btn { background: #fff; border: 1px solid var(--line); border-radius: 999px; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 1.02em; transition: border-color .12s ease, box-shadow .12s ease; }
+  .sound-btn:hover { border-color: #c6cfdd; box-shadow: 0 3px 10px rgba(22,29,43,.08); }
+  .sound-btn[aria-pressed="false"] { opacity: .55; }
 
   details.history, details.hood { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
   details.history summary, details.hood summary { cursor: pointer; font-weight: 600; font-size: .88em; }
@@ -247,6 +259,8 @@
   /* ---------- Maths Challenge ---------- */
   .question { font-size: clamp(28px, 3.2vw, 52px); font-weight: 750; margin: 0 0 14px; line-height: 1.15; letter-spacing: -.02em; }
   .question em { font-style: normal; color: var(--accent); }
+  .question.empty-q { font-size: 1.05em; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+  .challenge-bank { color: var(--muted); font-size: .8em; font-weight: 600; margin: -8px 0 4px; }
   .progress-wrap { position: relative; height: 40px; background: #eef1f6; border-radius: 999px; overflow: hidden; margin: 10px 0 8px; }
   .progress-bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--accent); border-radius: 999px; transition: width .3s ease, background .3s; }
   .progress-bar.over { background: var(--bad); }
@@ -358,6 +372,7 @@
         <button class="tab" role="radio" id="src-real" aria-checked="false">Real (Arduino)</button>
       </div>
     </div>
+    <button class="sound-btn" id="soundBtn" aria-label="Toggle coin sounds" title="Toggle coin sounds" aria-pressed="true">🔊</button>
     <div class="status-pill" id="statusPill">
       <span class="dot" aria-hidden="true"></span>
       <span class="pill-text">No Arduino</span>
@@ -435,6 +450,12 @@
 
     <div class="goal-card">
       <h3>Savings goal</h3>
+      <div class="goal-item-row">
+        <label for="goalItem">Saving for</label>
+        <select id="goalItem" aria-label="What are you saving for">
+          <option value="">Just a number</option>
+        </select>
+      </div>
       <div class="goal-set">
         <input type="number" id="goalInput" min="1" step="1" placeholder="e.g. 120" aria-label="Goal amount in HK dollars">
         <button class="btn" id="goalSet">Set goal</button>
@@ -458,17 +479,21 @@
 
   <!-- Maths Challenge -->
   <section class="panel hidden" id="view-challenge" role="tabpanel" aria-labelledby="tab-challenge">
-    <p class="question">Can you make <em id="targetText">HK$14</em>?</p>
-    <div class="progress-wrap" aria-hidden="true">
-      <div class="progress-bar" id="progressBar"></div>
-      <div class="progress-label" id="progressLabel">HK$0 of HK$14</div>
-    </div>
-    <div class="feedback" id="feedback" aria-live="polite">Insert coins to begin!</div>
-    <div class="tray" id="challengeTray" aria-label="Inserted coins"></div>
-    <div class="mini-counts" id="miniCounts"></div>
-    <div class="row-actions">
-      <button class="btn" id="newQuestion">New Question</button>
-      <button class="btn secondary" id="startAgain">Start Again</button>
+    <p class="question" id="challengeQ">Can you make <em id="targetText">HK$14</em>?</p>
+    <p class="question empty-q" id="challengeEmpty" aria-live="polite">Your bank is empty — insert coins on the Count Coins tab (or with the machine) first. Your savings become the maths questions.</p>
+    <div id="challengeBody">
+      <p class="challenge-bank" id="challengeBank"></p>
+      <div class="progress-wrap" aria-hidden="true">
+        <div class="progress-bar" id="progressBar"></div>
+        <div class="progress-label" id="progressLabel">HK$0 of HK$14</div>
+      </div>
+      <div class="feedback" id="feedback" aria-live="polite">Insert coins to begin!</div>
+      <div class="tray" id="challengeTray" aria-label="Inserted coins"></div>
+      <div class="mini-counts" id="miniCounts"></div>
+      <div class="row-actions">
+        <button class="btn" id="newQuestion">New Question</button>
+        <button class="btn secondary" id="startAgain">Start Again</button>
+      </div>
     </div>
   </section>
 
@@ -499,7 +524,11 @@
     <div class="chips">
       <button class="chip" data-q="buy">What can I buy with my savings?</button>
       <button class="chip" data-q="goal">How long until I reach my goal?</button>
+      <button class="chip" data-q="hint">I'm stuck — hint me!</button>
       <button class="chip" data-q="tip">Give me a saving tip</button>
+      <button class="chip" data-q="how">How does CoinWise know my coin?</button>
+      <button class="chip" data-q="scallop">Why is the $2 coin wavy?</button>
+      <button class="chip" data-q="reject">Why does it stop for unknown coins?</button>
     </div>
     <form class="chat-input" id="chatForm">
       <input id="chatInput" placeholder="Ask the coach anything…" aria-label="Ask the coach" autocomplete="off">
@@ -507,7 +536,7 @@
     </form>
     <details class="hood">
       <summary>Under the hood (for teachers and students)</summary>
-      <p>Offline mode: the page does the maths itself — your savings, goal and a small price list — and fills in a template answer. AI mode sends a short prompt with the same numbers to DeepSeek (via Poe) and shows its reply. If the AI is unreachable, the offline answer is always available.</p>
+      <p>Offline mode: the page does the maths itself — your savings, goal, challenge hints and a small price list — and fills in a template answer. AI mode sends a short prompt with the same numbers to DeepSeek (via Poe) and shows its reply. If the AI is unreachable, the offline answer is always available.</p>
       <p id="hoodState"></p>
     </details>
   </section>
@@ -543,7 +572,7 @@ const COIN_META = {
   5: { nominal: 13.50, band: [13.00, 14.00] },  // HK$5 ≈ 13.5 g (thick edge)
 };
 const WEIGHT_MIN = 5, WEIGHT_MAX = 16;  // range shown on the weight axis
-const TARGET_MIN = 2, TARGET_MAX = 30;  // Maths Challenge random question range
+const TARGET_MIN = 2, TARGET_MAX = 30;  // Maths Challenge questions are drawn from the piggy-bank total; TARGET_MAX caps them
 const PRICES = [                        // used by the offline money coach
   { name: "MTR ride",      price: 8.6 },
   { name: "bubble tea",    price: 25 },
@@ -554,7 +583,7 @@ const PRICES = [                        // used by the offline money coach
 ];
 const HISTORY_DAYS = 30;
 const POE_BOT = "DeepSeek-R1";          // Poe bot name for the AI coach
-const LS = { goal: "cw.goal", history: "cw.history", coach: "cw.coach" };
+const LS = { goal: "cw.goal", goalItem: "cw.goalItem", history: "cw.history", coach: "cw.coach", sound: "cw.sound" };
 
 /* =====================================================================
    ARDUINO PARSER — edit this one function when the real firmware output
@@ -608,15 +637,18 @@ resetState(state.demo); resetState(state.challenge);
 
 const machine = { status: "DISCONNECTED", weight: null, weightHistory: [], timer: null };
 
-let challengeTarget = 14;
+let challengeTarget = 0;   // 0 = bank too small for a question yet
 function newTarget() {
+  const maxT = Math.min(TARGET_MAX, total(state.demo)); // questions come from what's in the piggy bank
+  if (maxT < TARGET_MIN) return 0;
   let t;
-  do { t = TARGET_MIN + Math.floor(Math.random() * (TARGET_MAX - TARGET_MIN + 1)); }
-  while (t === challengeTarget && TARGET_MAX > TARGET_MIN);
+  do { t = TARGET_MIN + Math.floor(Math.random() * (maxT - TARGET_MIN + 1)); }
+  while (t === challengeTarget && maxT > TARGET_MIN);
   return t;
 }
 
 let goal = Number(localStorage.getItem(LS.goal)) || 0;
+let goalItem = localStorage.getItem(LS.goalItem) || "";
 let history = {};
 try { history = JSON.parse(localStorage.getItem(LS.history) || "{}"); } catch (e) {}
 let coach = { backend: "offline", token: "" };
@@ -695,6 +727,7 @@ function insertCoin(value, source = "button") {
   s.order.push(value);
   if (source === "arduino") log(`Coin HK$${value} → ${mode === "demo" ? "Count Coins" : mode === "challenge" ? "Maths Challenge" : "savings"}`, "ok");
   if (mode !== "challenge") recordInsert(value, before);
+  playCoinSound(value);
   render(value);
   return true;
 }
@@ -733,8 +766,15 @@ function renderDemo(newest) {
 
 function renderChallenge(newest) {
   const s = state.challenge;
+  if (challengeTarget === 0) challengeTarget = newTarget(); // the bank may have grown since the last visit
   const t = total(s), target = challengeTarget;
+  const empty = target === 0;
+  $("challengeQ").classList.toggle("hidden", empty);
+  $("challengeEmpty").classList.toggle("hidden", !empty);
+  $("challengeBody").classList.toggle("hidden", empty);
+  if (empty) return; // the hint says it all — no question until the bank holds at least TARGET_MIN
   $("targetText").textContent = hk(target);
+  $("challengeBank").textContent = `Your bank holds ${hk(total(state.demo))} — every question is drawn from your savings.`;
   const bar = $("progressBar"), fb = $("feedback");
   bar.style.width = Math.min(100, (t / target) * 100) + "%";
   bar.classList.toggle("over", t > target);
@@ -793,6 +833,7 @@ function render(newest) {
 }
 
 function celebrate() {
+  playWin();
   const box = document.createElement("div");
   box.className = "confetti";
   const colours = ["#2f6fde", "#1d8a4e", "#f5b301", "#e4572e", "#9b5de5"];
@@ -809,11 +850,55 @@ function celebrate() {
 }
 
 /* =====================================================================
+   COIN SOUNDS — Web Audio synth, no assets; lighter coin = higher ring
+   ===================================================================== */
+let audioCtx = null;
+let soundOn = localStorage.getItem(LS.sound) !== "0";
+function ac() {
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  } catch (e) { return null; }
+}
+function tone(freq, dur, type, vol, delay) {
+  const ctx = ac();
+  if (!ctx) return;
+  const t0 = ctx.currentTime + (delay || 0);
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function playCoinSound(value) {
+  if (!soundOn) return;
+  const base = { 1: 2960, 2: 2489, 5: 1976 }[value] || 2200;
+  tone(base, 0.5, "sine", 0.16);            // fundamental
+  tone(base * 2.76, 0.34, "sine", 0.05);    // metallic partials
+  tone(base * 4.07, 0.2, "sine", 0.025);
+  tone(base * 0.5, 0.4, "triangle", 0.06);  // body
+}
+function playThunk() { if (!soundOn) return; tone(170, 0.18, "triangle", 0.2); tone(95, 0.22, "sine", 0.13); }
+function playWin() {
+  if (!soundOn) return;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone(f, 0.35, "sine", 0.14, i * 0.09));
+}
+
+/* =====================================================================
    SAVINGS GOAL + HISTORY (localStorage)
    ===================================================================== */
 function renderGoal() {
   const t = total(state.demo);
   $("goalInput").value = goal || "";
+  $("goalItem").value = goalItem;
   if (!goal) {
     $("goalBody").classList.add("hidden");
     $("goalText").textContent = "No goal yet — set one and watch the progress bar fill as coins come in.";
@@ -823,10 +908,15 @@ function renderGoal() {
   const pct = Math.min(100, t / goal * 100);
   $("goalFill").style.width = pct + "%";
   const left = goal - t;
+  const hint = `≈ ${Math.ceil(left / 5)} more $5 coins, or ${Math.ceil(left / 2)} more $2 coins`;
   if (left > 0) {
-    $("goalText").innerHTML = `${hk(t)} saved of ${hk(goal)} · <b>${hk(left)}</b> to go<br><span class="muted-small">≈ ${Math.ceil(left / 5)} more $5 coins, or ${Math.ceil(left / 2)} more $2 coins</span>`;
+    $("goalText").innerHTML = goalItem
+      ? `${hk(t)} saved · <b>${hk(left)}</b> to go for your ${escapeHtml(goalItem)}<br><span class="muted-small">${hint}</span>`
+      : `${hk(t)} saved of ${hk(goal)} · <b>${hk(left)}</b> to go<br><span class="muted-small">${hint}</span>`;
   } else {
-    $("goalText").innerHTML = `<b>Goal reached: ${hk(goal)}!</b> Set a new goal to keep going.`;
+    $("goalText").innerHTML = goalItem
+      ? `<b>Goal reached — enjoy your ${escapeHtml(goalItem)}! 🎉</b> Set a new goal to keep going.`
+      : `<b>Goal reached: ${hk(goal)}!</b> Set a new goal to keep going.`;
   }
 }
 
@@ -847,7 +937,7 @@ function recordInsert(value, beforeTotal) {
   renderHistory();
   if (goal > 0 && beforeTotal < goal && beforeTotal + value >= goal) {
     celebrate();
-    $("announcer").textContent = `Goal reached: ${hk(goal)}!`;
+    $("announcer").textContent = goalItem ? `Goal reached — enjoy your ${goalItem}!` : `Goal reached: ${hk(goal)}!`;
   }
 }
 
@@ -878,7 +968,9 @@ const MACHINE_UI = {
 
 function setMachine(status) {
   clearTimeout(machine.timer);
+  const prev = machine.status;
   machine.status = status;
+  if (status === "ERROR" && prev !== "ERROR") playThunk();
   if (status === "READY") resetScale();
   renderMachine();
 }
@@ -985,6 +1077,7 @@ function setSource(src) {
   $("realPanel").classList.toggle("hidden", src !== "real");
   // Start fresh so virtual and real coins are never mixed
   resetState(state.demo); resetState(state.challenge);
+  challengeTarget = newTarget();
   resetScale();
   renderDemo(); renderChallenge();
   if (src === "real" && !port) setMachine("DISCONNECTED");
@@ -997,13 +1090,13 @@ $("tab-demo").addEventListener("click", () => setMode("demo"));
 $("tab-challenge").addEventListener("click", () => setMode("challenge"));
 $("tab-coach").addEventListener("click", () => setMode("coach"));
 
-$("demoReset").addEventListener("click", () => { resetState(state.demo); renderDemo(); });
+$("demoReset").addEventListener("click", () => { resetState(state.demo); challengeTarget = newTarget(); renderDemo(); });
 $("startAgain").addEventListener("click", () => { resetState(state.challenge); renderChallenge(); });
 $("newQuestion").addEventListener("click", () => {
   challengeTarget = newTarget();
   resetState(state.challenge);
   renderChallenge();
-  $("announcer").textContent = `New question: can you make ${hk(challengeTarget)}?`;
+  if (challengeTarget > 0) $("announcer").textContent = `New question: can you make ${hk(challengeTarget)}?`;
 });
 
 $("goalSet").addEventListener("click", () => {
@@ -1011,20 +1104,50 @@ $("goalSet").addEventListener("click", () => {
   if (v > 0) {
     goal = v;
     localStorage.setItem(LS.goal, String(v));
+    goalItem = $("goalItem").value;
+    if (goalItem) localStorage.setItem(LS.goalItem, goalItem);
+    else localStorage.removeItem(LS.goalItem);
     renderGoal();
-    $("announcer").textContent = `Savings goal set: ${hk(goal)}.`;
+    $("announcer").textContent = goalItem ? `Savings goal set: ${hk(goal)} for your ${goalItem}.` : `Savings goal set: ${hk(goal)}.`;
   }
 });
 $("goalClear").addEventListener("click", () => {
   goal = 0;
+  goalItem = "";
   localStorage.removeItem(LS.goal);
+  localStorage.removeItem(LS.goalItem);
   renderGoal();
+});
+function buildGoalItems() {
+  const sel = $("goalItem");
+  PRICES.forEach(p => {
+    const o = document.createElement("option");
+    o.value = p.name;
+    o.textContent = `${p.name} — ${hk(p.price)}`;
+    sel.appendChild(o);
+  });
+  sel.value = goalItem;
+}
+$("goalItem").addEventListener("change", () => {
+  const p = PRICES.find(x => x.name === $("goalItem").value);
+  if (!p) return; // "Just a number" — leave the current goal untouched
+  $("goalInput").value = p.price;
+  $("goalSet").click();
 });
 $("historyClear").addEventListener("click", () => {
   history = {};
   localStorage.removeItem(LS.history);
   renderHistory();
 });
+$("soundBtn").addEventListener("click", () => {
+  soundOn = !soundOn;
+  try { localStorage.setItem(LS.sound, soundOn ? "1" : "0"); } catch (e) {}
+  $("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+  $("soundBtn").setAttribute("aria-pressed", String(soundOn));
+  if (soundOn) playCoinSound(2);
+});
+$("soundBtn").textContent = soundOn ? "🔊" : "🔇";
+$("soundBtn").setAttribute("aria-pressed", String(soundOn));
 
 document.addEventListener("keydown", e => {
   if (e.target.matches("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1046,8 +1169,23 @@ let tipIndex = 0;
 const CHIP_QUESTIONS = {
   buy:  "What can I buy with my savings?",
   goal: "How long until I reach my savings goal?",
-  tip:  "Give me a saving tip"
+  hint: "I'm stuck on my Maths Challenge — hint me!",
+  tip:  "Give me a saving tip",
+  how:  "How does the machine know which coin I inserted?",
+  scallop: "Why is the $2 coin wavy?",
+  reject: "Why does the machine stop for unknown coins?"
 };
+
+function coinWeights() { return COINS.map(v => `$${v} ≈ ${COIN_META[v].nominal} g`).join(", "); }
+
+// Rich, live context for the AI engine when the student asks for a challenge hint
+function hintContext() {
+  if (!challengeTarget) return "I want to play the Maths Challenge but my bank is empty. What should I do first?";
+  const made = total(state.challenge), left = challengeTarget - made;
+  if (left < 0) return `I'm stuck on the Maths Challenge: I needed to make HK$${challengeTarget} but I have HK$${made}, which is too much. What should I do?`;
+  if (left === 0) return `I finished the Maths Challenge: I made HK$${challengeTarget} exactly. What should I do next?`;
+  return `I'm stuck on the Maths Challenge: I need to make HK$${challengeTarget} but I only have HK$${made} so far. Give me ONE small hint — don't tell me the answer — and explain your thinking in one short sentence.`;
+}
 
 function answerOffline(q, savings) {
   if (q === "buy") {
@@ -1061,18 +1199,39 @@ function answerOffline(q, savings) {
   if (q === "goal") {
     if (!goal) return "Set a savings goal first — it's on the Count Coins tab.";
     const left = goal - total(state.demo);
-    if (left <= 0) return `You've reached your goal of ${hk(goal)}! Time to set a new one.`;
+    if (left <= 0) return goalItem ? `You've reached your goal — enjoy your ${goalItem}! Time to set a new one.` : `You've reached your goal of ${hk(goal)}! Time to set a new one.`;
     const weeks = Math.ceil(left / 5);
-    return `You need ${hk(left)} more to reach ${hk(goal)}.<br>That's ≈ ${Math.ceil(left / 5)} × $5 coins. If you save one $5 coin a week, that's about ${weeks} week${weeks > 1 ? "s" : ""}.`;
+    return `You need ${hk(left)} more to reach ${hk(goal)}${goalItem ? ` for your ${goalItem}` : ""}.<br>That's ≈ ${Math.ceil(left / 5)} × $5 coins. If you save one $5 coin a week, that's about ${weeks} week${weeks > 1 ? "s" : ""}.`;
+  }
+  if (q === "hint") {
+    if (!challengeTarget) return "You don't have a Maths Challenge question yet — sort some coins into your bank on the Count Coins tab first, then open Maths Challenge.";
+    const made = total(state.challenge), left = challengeTarget - made;
+    if (left === 0) return `You already made it! ${describe(state.challenge)} = ${hk(challengeTarget)}. Press New Question in Maths Challenge to try another.`;
+    if (left < 0) return `You're ${hk(-left)} over! Press Start Again in Maths Challenge and try a different combination.`;
+    if (state.challenge.order.length === 0) {
+      const big = Math.max(...COINS);
+      return `You need to make ${hk(challengeTarget)}. A good first move is your biggest coin — try a $${big} first, then see what's left.`;
+    }
+    const next = COINS.slice().reverse().find(c => c <= left);
+    return `You have ${hk(made)}, so you need ${hk(left)} more. Try a $${next} next — then work out what's still missing. Ask again for another hint!`;
+  }
+  if (q === "how") {
+    return `CoinWise "feels" coins the way your hand does. Under the tray is a tiny scale sensor (an <b>HX711 load cell</b>) that measures grams: ${coinWeights()}. The reading lands in one of the weight bands on the screen — that's how it knows. Try it: watch the dot fall into a band when you weigh a coin!`;
+  }
+  if (q === "scallop") {
+    return `The $2 coin's wavy edge isn't just decoration — the scallops are there so people who can't see well can <b>feel</b> which coin it is. $1 is round and light, $2 has 12 scallops, $5 is round but thick and heavy. CoinWise does the same trick — but with a weight sensor instead of fingertips.`;
+  }
+  if (q === "reject") {
+    return `When a weight matches <b>no</b> band, the machine stops instead of guessing. Engineers call that <b>fail-safe</b>: if you're not sure, do nothing — never force a wrong answer. Take the coin off the tray and try another one.`;
   }
   if (q === "tip") {
     return "Tip: " + TIPS[tipIndex++ % TIPS.length];
   }
-  return `I can help with questions about your savings. Tap one of the suggestion buttons above, or switch the answer engine to AI (gear icon) to ask anything.`;
+  return `I can help with your savings, the Maths Challenge, or how this machine works. Tap a suggestion button, or switch the engine to AI (gear icon) to ask anything.`;
 }
 
 async function callCoachLLM(question, savings) {
-  const prompt = `The student has saved HK$${savings}${goal ? ` and their goal is HK$${goal}` : ""}. Question: ${question}`;
+  const prompt = `The student has saved HK$${savings}${goal ? ` and their goal is HK$${goal}${goalItem ? ` (saving for a ${goalItem})` : ""}` : ""}.${challengeTarget ? ` They are also playing the Maths Challenge: target HK$${challengeTarget}, made HK$${total(state.challenge)} so far.` : ""} Question: ${question}`;
   coachLastPrompt = prompt;
   renderCoach();
   // Verify endpoint shape against the current Poe API docs.
@@ -1082,7 +1241,7 @@ async function callCoachLLM(question, savings) {
     body: JSON.stringify({
       bot: POE_BOT,
       messages: [
-        { role: "system", content: "You are CoinWise Coach, a friendly money coach for Hong Kong secondary students. Keep answers under 60 words, encouraging and practical. Use HKD." },
+        { role: "system", content: "You are CoinWise Coach, a friendly coach for Hong Kong primary students using a coin-sorting machine. Help with three things: (1) money and savings advice; (2) ONE-step hints for the Maths Challenge — never reveal the full answer unless the student asks twice; (3) explain the science of coins and the machine in simple, fun language (the $2 coin's scalloped edge helps visually impaired people feel it; the machine identifies coins by weight using an HX711 load cell and weight bands; unknown weights stop the machine as a fail-safe). Keep answers under 70 words, encouraging and practical. Use HKD." },
         { role: "user", content: prompt }
       ]
     })
@@ -1137,7 +1296,10 @@ $("chatForm").addEventListener("submit", e => {
   coachAsk(q, q, q);
 });
 document.querySelectorAll(".chip").forEach(chip => {
-  chip.addEventListener("click", () => coachAsk(chip.dataset.q, chip.textContent, CHIP_QUESTIONS[chip.dataset.q]));
+  chip.addEventListener("click", () => {
+    const q = chip.dataset.q;
+    coachAsk(q, chip.textContent, q === "hint" ? hintContext() : CHIP_QUESTIONS[q]);
+  });
 });
 
 $("coachSettingsBtn").addEventListener("click", e => {
@@ -1313,13 +1475,14 @@ function buildCoinButtons() {
 $("brandLogo").appendChild(coinEl(2));
 
 buildCoinButtons();
+buildGoalItems();
 challengeTarget = newTarget();
 render();
 renderMachine();
 renderHistory();
 buildBandLegend();
 resetScale();
-addChat("bot", "Hi! I'm your CoinWise coach. I can see what's in your coin bank — ask me what you could buy, or how close you are to your goal.");
+addChat("bot", "Hi! I'm your CoinWise coach. Ask me about your savings, ask for a hint when the Maths Challenge gets tricky — or ask me how this machine knows which coin is which!");
 log("Ready. Virtual coins work without an Arduino. Choose Real (Arduino) to use the scale.");
 log('Tip: in Real mode, type a line below and press "Test this line" to pretend the Arduino sent it, or use the quick demo buttons.');
 log("Accepted lines: {\"type\":\"coin\",\"value\":2} · {\"type\":\"weight\",\"value\":8.41} · READY / WEIGHING / SORTING / ERROR · a bare number like 2 or 8.41");

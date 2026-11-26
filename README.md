@@ -8,9 +8,10 @@ Live demo: https://louisli185.github.io/coinwise-dashboard/
 
 ## Features
 
-- **Count Coins** — counts and totals per denomination, value-distribution bars, savings goal with progress, per-day history (saved in the browser)
-- **Maths Challenge** — "Can you make HK$14?" game for practising money arithmetic
-- **AI Money Coach** — offline local-maths answers (always works) + optional DeepSeek via Poe backend with automatic fallback
+- **Count Coins** — counts and totals per denomination, value-distribution bars, savings goal with progress (tie it to a real wish — bubble tea, cinema ticket…), per-day history (saved in the browser)
+- **Maths Challenge** — "Can you make HK$14?" game whose numbers are drawn from your own bank total — the more you sort, the bigger the challenges
+- **AI Money Coach** — offline local-maths answers (always works) + optional DeepSeek via Poe backend with automatic fallback; one-step challenge hints (never the answer) and kid-friendly explanations of the science inside the machine
+- **Coin sounds** — synthesized coin "clinks" with a different pitch per denomination, no audio files
 - **Real (Arduino) mode** — Web Serial connection, machine states (READY / WEIGHING / SORTING / ERROR), live weight readout, 60-point sparkline, and a weight-band axis showing the recognised ranges
 - **Simulator** — test the whole serial pipeline without hardware ("Arduino messages" panel at the bottom)
 
